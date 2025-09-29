@@ -1,0 +1,2 @@
+# qr-feedback-router
+This is the GitHub page for the Absolutely Brilliant Concepts, Inc - Automated Customer Feedback Routing & Social Review Platform (QR Code and or URl-Driven) capstone project. We will use this GitHub to code a SaaS web-based application for small businesses that customers can use to send feedback to said businesses or publicly upload their reviews to Yelp, Google Reviews, etc.
