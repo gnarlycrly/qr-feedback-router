@@ -22,6 +22,18 @@ function Home() {
         >
           Go to Dashboard
         </button>
+        <button
+          onClick={() => navigate("/reward")}
+          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+        >
+          Go to Rewards
+        </button>
+        <button
+          onClick={() => navigate("/portal")}
+          className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
+        >
+          Go to Management Portal
+        </button>
       </div>
     </div>
   );
