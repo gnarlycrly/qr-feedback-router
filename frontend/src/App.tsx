@@ -1,9 +1,10 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home.tsx";
-import Login from "./pages/Login.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import RewardPage from "./pages/RewardPage.tsx";
-import FeedbackPage from "./pages/FeedbackPage.tsx";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import RewardPage from "./pages/RewardPage";
+import FeedbackPage from "./pages/FeedbackPage";
+import BusinessPortal from "./pages/BusinessPortal";
 
 function App() {
   return (
@@ -13,6 +14,8 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/reward" element={<RewardPage />} />
       <Route path="/feedback" element={<FeedbackPage />} /> 
+      <Route path="/portal" element={<BusinessPortal/>} />
+
     </Routes>
   );
 }
