@@ -3,6 +3,8 @@ import Home from "./pages/Home.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import RewardPage from "./pages/RewardPage.tsx";
+import FeedbackPage from "./pages/FeedbackPage.tsx";
+
 function App() {
   return (
     <Routes>
@@ -10,6 +12,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/reward" element={<RewardPage />} />
+      <Route path="/feedback" element={<FeedbackPage />} /> 
     </Routes>
   );
 }
