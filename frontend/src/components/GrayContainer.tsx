@@ -6,7 +6,7 @@ interface GrayContainerProps {
 }
 
 const GrayContainer = ({ children, className = "" }: GrayContainerProps) => (
-  <div className={`bg-gray-100 rounded-2xl p-6 shadow ${className}`}>
+  <div className={`bg-app-surface rounded-2xl p-6 shadow ${className}`}>
     {children}
   </div>
 );

@@ -5,13 +5,19 @@ import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
+  // Always navigate to portal after login/signup since that's our main flow now
+  const next = "/portal";
   const [step, setStep] = useState<"login" | "signup" | "business">("login");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [brandColor, setBrandColor] = useState<string>("#1A3673");
 
   // Step 1: Login page
   if (step === "login") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <div className="flex flex-col items-center justify-center">
         <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
           <h2 className="text-2xl font-bold mb-4">Login</h2>
 
@@ -29,8 +35,8 @@ export default function Login() {
 
             <button
               type="button"
-              onClick={() => navigate("/")}
-              className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              onClick={() => navigate(next)}
+              className="btn-app-primary py-2 rounded-lg"
             >
               Login
             </button>
@@ -51,7 +57,7 @@ export default function Login() {
   // Step 2: Sign Up (user credentials)
   if (step === "signup") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <div className="flex flex-col items-center justify-center">
         <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
           <h2 className="text-2xl font-bold mb-4">Create Account</h2>
 
@@ -74,8 +80,9 @@ export default function Login() {
 
             <button
               type="button"
+              // proceed to the business customization step
               onClick={() => setStep("business")}
-              className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              className="btn-app-primary py-2 rounded-lg"
             >
               Sign Up
             </button>
@@ -107,7 +114,7 @@ export default function Login() {
     };
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <div className="flex flex-col items-center justify-center">
         <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
           <h2 className="text-2xl font-bold mb-4">Brand Customization</h2>
 
@@ -116,22 +123,39 @@ export default function Login() {
               type="text"
               placeholder="Business Name"
               className="border rounded-lg p-2"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
             />
             <input
               type="text"
               placeholder="Business Address"
               className="border rounded-lg p-2"
+              value={businessAddress}
+              onChange={(e) => setBusinessAddress(e.target.value)}
             />
             <input
               type="text"
               placeholder="Phone Number"
               className="border rounded-lg p-2"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
-            <input
-              type="text"
-              placeholder="Brand Color (e.g. #3498db)"
-              className="border rounded-lg p-2"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Brand Color (e.g. #3498db)"
+                className="border rounded-lg p-2 flex-1"
+                value={brandColor}
+                onChange={(e) => setBrandColor(e.target.value)}
+              />
+              <input
+                aria-label="brand color picker"
+                type="color"
+                value={brandColor}
+                onChange={(e) => setBrandColor(e.target.value)}
+                className="w-12 h-10 p-0 border-0"
+              />
+            </div>
 
             {/* Image Upload Section */}
             <div className="flex flex-col items-center">
@@ -159,8 +183,31 @@ export default function Login() {
 
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
-              className="bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 mt-4"
+              // apply the brand customization to the app theme and then go to the next page
+              onClick={() => {
+                // normalize color
+                const color = brandColor.startsWith("#") ? brandColor : `#${brandColor}`;
+                try {
+                  document.documentElement.style.setProperty("--app-primary", color);
+                  document.documentElement.style.setProperty("--app-accent", color);
+                  // persist theme to localStorage so Layout can reapply on reload
+                  localStorage.setItem(
+                    "ab_theme",
+                    JSON.stringify({ appPrimary: color, appAccent: color })
+                  );
+                } catch (e) {
+                  // ignore failures
+                }
+
+                // optionally persist business info as well
+                localStorage.setItem(
+                  "ab_business",
+                  JSON.stringify({ businessName, businessAddress, phone })
+                );
+
+                navigate(next);
+              }}
+              className="btn-app-accent py-2 rounded-lg mt-4"
             >
               Submit
             </button>

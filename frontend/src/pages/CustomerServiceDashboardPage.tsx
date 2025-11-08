@@ -1,3 +1,4 @@
+// Dashboard for customer service teams — shows quick stats, recent reviews and action items.
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -6,7 +7,6 @@ import {
   Calendar,
   Download,
   Gift,
-  Menu,
   MessageCircle,
   Star as StarIcon,
   Users,
@@ -208,24 +208,7 @@ function CustomerServiceDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
       <div className="relative mx-auto flex max-w-md flex-col px-5 py-6">
-        <header className="space-y-3">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              className="rounded-full p-2 text-gray-700 hover:bg-gray-200"
-              aria-label="Open navigation menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="flex flex-col items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Dashboard Overview</h1>
-              <p className="text-center text-xs text-gray-500">
-                Monitor your customer feedback and business performance
-              </p>
-            </div>
-            <span className="h-9 w-9" aria-hidden />
-          </div>
-        </header>
+        {/* header removed: title/subtitle duplicated in Business Portal; content flows directly into stats */}
 
         <section className="mt-6 flex items-center justify-between gap-3">
           <button
@@ -420,12 +403,7 @@ function CustomerServiceDashboardPage() {
               >
                 Close
               </button>
-              <button
-                type="button"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                Log Follow-ups
-              </button>
+              {/* Log Follow-ups removed (no action implemented) */}
             </div>
           </div>
         </div>

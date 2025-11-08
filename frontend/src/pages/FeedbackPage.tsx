@@ -1,21 +1,24 @@
 import React from "react";
 import FeedbackForm from "../components/FeedbackForm";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
+// Customer-facing feedback page. Submits navigate to the reward page by default.
 export default function FeedbackPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const next = (location.state as { next?: string })?.next ?? "/reward";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_left,_#eef2ff_0%,_#e0e7ff_40%,_#c7d2fe_80%)] px-4 py-8 relative">
-      {/* optional "back" button in corner */}
+    <div className="min-h-screen flex items-center justify-center bg-app-gradient px-4 py-8 relative">
+      {/* Back button */}
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate(-1)}
         className="absolute top-4 left-4 text-sm text-indigo-600 hover:underline"
       >
         ← Back
       </button>
 
-      <FeedbackForm />
+      <FeedbackForm onSuccess={() => navigate(`${next}?fromFeedback=1&guest=1`, { state: { fromFeedback: true } })} />
     </div>
   );
 }
