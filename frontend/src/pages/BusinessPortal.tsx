@@ -17,7 +17,7 @@ const BusinessPortal = () => {
         <h1 className="text-xl font-bold mb-6">Business Portal</h1>
         <NavButton label="Reward Management" icon={<Gift size={18} />} active={activeTab === "rewards"} onClick={() => setActiveTab("rewards")} />
         <NavButton label="Business Information" icon={<Building size={18} />} active={activeTab === "business"} onClick={() => setActiveTab("business")} />
-        <NavButton label="Brand Customization" icon={<Palette size={18} />} active={activeTab === "brand"} onClick={() => setActiveTab("brand")} />
+        {/* <NavButton label="Brand Customization" icon={<Palette size={18} />} active={activeTab === "brand"} onClick={() => setActiveTab("brand")} /> */}
   <NavButton label="QR Code Generation" icon={<QrCode size={18} />} active={activeTab === "qr"} onClick={() => setActiveTab("qr")} />
   <NavButton label="Customer View" icon={<Eye size={18} />} active={activeTab === "preview"} onClick={() => setActiveTab("preview")} />
   <NavButton label="Review Monitoring" icon={<MessageCircle size={18} />} active={activeTab === "reviews"} onClick={() => setActiveTab("reviews")} />
@@ -34,7 +34,7 @@ const BusinessPortal = () => {
 
         {activeTab === "rewards" && <RewardManagement />}
         {activeTab === "business" && <BusinessInformation />}
-        {activeTab === "brand" && <BrandCustomization />}
+        {/* {activeTab === "brand" && <BrandCustomization />} */}
         {activeTab === "qr" && <QRCodeGeneration />}
         {activeTab === "preview" && <CustomerFormPreview />}
         {activeTab === "reviews" && <CustomerServiceDashboardPage />}

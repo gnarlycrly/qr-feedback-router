@@ -5,6 +5,8 @@ import GrayContainer from "../components/GrayContainer";
 import BlackButton from "../components/BlackButton";
 import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
+import { auth } from "../firebaseConfig";
+import { signOut } from "firebase/auth";
 
 type Reward = {
   id: number;
@@ -83,6 +85,7 @@ const RewardManagement = () => {
         onClose={() => setShowAddWindow(false)}
         onSubmit={addReward}
       />
+      <BlackButton onClick={() => signOut(auth)} label="Sign Out"></BlackButton>
     </GrayContainer>
   );
 };

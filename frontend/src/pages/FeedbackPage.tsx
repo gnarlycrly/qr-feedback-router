@@ -1,4 +1,3 @@
-import React from "react";
 import FeedbackForm from "../components/FeedbackForm";
 import { useNavigate, useLocation } from "react-router-dom";
 

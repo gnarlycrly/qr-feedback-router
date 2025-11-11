@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebaseConfig.ts";
 export default function Login() {
   const navigate = useNavigate();
   // Always navigate to portal after login/signup since that's our main flow now
@@ -13,7 +14,21 @@ export default function Login() {
   const [businessAddress, setBusinessAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [brandColor, setBrandColor] = useState<string>("#1A3673");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
+  const handleLogin = async () => {
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Logged in:", userCred.user.uid);
+      alert(userCred.user.uid);
+      navigate("/portal", { replace: true });
+
+    } catch (err: any) {
+      console.error("Login failed:", err.message);
+      alert(err.message);
+    }
+  };
   // Step 1: Login page
   if (step === "login") {
     return (
@@ -26,16 +41,18 @@ export default function Login() {
               type="email"
               placeholder="Email"
               className="border rounded-lg p-2"
+              onChange={(e)=> setEmail(e.target.value)}
             />
             <input
               type="password"
               placeholder="Password"
               className="border rounded-lg p-2"
+              onChange={(e)=> setPassword(e.target.value)}
             />
 
             <button
               type="button"
-              onClick={() => navigate(next)}
+              onClick={() => handleLogin()}
               className="btn-app-primary py-2 rounded-lg"
             >
               Login
