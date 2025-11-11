@@ -8,7 +8,7 @@ function Home() {
       <h1 className="text-3xl font-bold mb-4">Absolutely Brilliant</h1>
       <p className="mb-6">Welcome to our frontend prototype!</p>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap justify-center">
         <button
           onClick={() => navigate("/login")}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -28,13 +28,21 @@ function Home() {
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
         >
           User View
-          
+
         </button>
+
+        <button
+          onClick={() => navigate("/reward")}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+        >
+          Reward Page
+        </button>
+
         <button
           onClick={() => navigate("/portal")}
           className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition">
             Management Portal
-          </button> 
+          </button>
 
       </div>
     </div>

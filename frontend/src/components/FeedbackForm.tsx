@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import RatingStars from "./RatingStars";
 
 export default function FeedbackForm() {
+  const navigate = useNavigate();
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
 
@@ -16,9 +18,15 @@ export default function FeedbackForm() {
 
     console.log("submit:", payload);
 
-    // reset form (you can remove this if you don't want auto clear)
-    setRating(0);
-    setComments("");
+    // Navigate to reward page with feedback data
+    navigate("/reward", {
+      state: {
+        feedback: {
+          rating,
+          comment: comments,
+        }
+      }
+    });
   }
 
   return (

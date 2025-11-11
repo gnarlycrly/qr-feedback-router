@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from '@react-oauth/google';
 
 type UserProfile = {
@@ -131,10 +132,12 @@ const SignInPrompt = ({
   onContinue,
   isLoading,
   onDecline,
+  rewardData,
 }: {
   onContinue: () => void;
   isLoading: boolean;
   onDecline: () => void;
+  rewardData: RewardDetails;
 }) => (
   <article className="w-full max-w-md rounded-3xl bg-white px-6 py-10 text-center shadow-lg sm:px-10">
     <div className="flex flex-col items-center gap-4">
@@ -167,10 +170,10 @@ const SignInPrompt = ({
       </p>
       <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-5">
         <h3 className="text-lg font-semibold text-blue-600">
-          {mockRewardData.reward.title}
+          {rewardData.reward.title}
         </h3>
         <p className="mt-1 text-sm text-gray-600">
-          {mockRewardData.reward.description}
+          {rewardData.reward.description}
         </p>
         <p className="mt-4 text-xs text-gray-400">
           Sign in so we can attach this reward to your profile. You&apos;ll see
@@ -237,10 +240,14 @@ const RewardContent = ({
   copied,
   onCopy,
   user,
+  rewardData,
+  onLeaveAnotherReview,
 }: {
   copied: boolean;
   onCopy: () => Promise<void>;
   user: UserProfile;
+  rewardData: RewardDetails;
+  onLeaveAnotherReview: () => void;
 }) => {
   const renderStars = (rating: number) => (
     <div
@@ -295,17 +302,17 @@ const RewardContent = ({
       <section className="mt-6 rounded-2xl bg-gray-50 p-5">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-gray-800">Your Review</h3>
-          {renderStars(mockRewardData.customerReview.rating)}
+          {renderStars(rewardData.customerReview.rating)}
         </div>
         <p className="mt-2 text-sm italic text-gray-600">
-          &ldquo;{mockRewardData.customerReview.comment}&rdquo;
+          &ldquo;{rewardData.customerReview.comment}&rdquo;
         </p>
       </section>
 
       <p className="mt-6 text-center text-sm leading-relaxed text-gray-500">
         We truly appreciate you taking the time to share your experience with{" "}
         <span className="font-semibold text-gray-700">
-          {mockRewardData.businessName}
+          {rewardData.businessName}
         </span>
         . Enjoy this thank-you offer on us!
       </p>
@@ -332,17 +339,17 @@ const RewardContent = ({
 
         <div className="mt-4 text-center">
           <h3 className="text-xl font-bold text-blue-600">
-            {mockRewardData.reward.title}
+            {rewardData.reward.title}
           </h3>
           <p className="mt-1 text-base text-gray-700">
-            {mockRewardData.reward.description}
+            {rewardData.reward.description}
           </p>
         </div>
 
         <div className="mt-5 flex items-center justify-center gap-2">
           <div className="rounded-xl border border-gray-300 bg-white px-5 py-3">
             <p className="text-xl font-bold tracking-[0.35em] text-gray-900">
-              {mockRewardData.reward.promoCode}
+              {rewardData.reward.promoCode}
             </p>
           </div>
           <button
@@ -391,7 +398,7 @@ const RewardContent = ({
         </span>
 
         <p className="mt-3 text-center text-xs text-gray-500">
-          {mockRewardData.reward.terms}
+          {rewardData.reward.terms}
         </p>
 
         <div className="mt-5 flex flex-col items-center">
@@ -429,6 +436,7 @@ const RewardContent = ({
         </p>
         <button
           type="button"
+          onClick={onLeaveAnotherReview}
           className="w-full rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition duration-150 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
         >
           Leave Another Review
@@ -438,7 +446,7 @@ const RewardContent = ({
   );
 };
 
-const DeclinedState = ({ onRestart }: { onRestart: () => void }) => (
+const DeclinedState = ({ onRestart, rewardData }: { onRestart: () => void; rewardData: RewardDetails }) => (
   <article className="w-full max-w-md rounded-3xl bg-white px-6 py-10 text-center shadow-lg sm:px-10">
     <div className="flex flex-col items-center gap-4">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100">
@@ -463,7 +471,7 @@ const DeclinedState = ({ onRestart }: { onRestart: () => void }) => (
         </h2>
         <p className="mt-2 text-sm text-gray-500">
           Thanks again for sharing your experience. You can still claim your{" "}
-          {mockRewardData.reward.description.toLowerCase()} later—just sign in
+          {rewardData.reward.description.toLowerCase()} later—just sign in
           to unlock it.
         </p>
       </div>
@@ -493,14 +501,32 @@ const DeclinedState = ({ onRestart }: { onRestart: () => void }) => (
 );
 
 function RewardPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [flowStep, setFlowStep] = useState<FlowStep>("prompt");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  // Get feedback data from navigation state, or use mock data as fallback
+  const feedbackData = location.state?.feedback || {
+    rating: mockRewardData.customerReview.rating,
+    comment: mockRewardData.customerReview.comment,
+  };
+
+  // Create rewardData with actual feedback
+  const rewardData: RewardDetails = {
+    customerReview: {
+      rating: feedbackData.rating,
+      comment: feedbackData.comment,
+    },
+    businessName: mockRewardData.businessName,
+    reward: mockRewardData.reward,
+  };
+
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(mockRewardData.reward.promoCode);
+      await navigator.clipboard.writeText(rewardData.reward.promoCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -568,6 +594,10 @@ function RewardPage() {
     setCopied(false);
   };
 
+  const handleLeaveAnotherReview = () => {
+    navigate("/feedback");
+  };
+
   return (
     <RewardLayout user={user} step={flowStep}>
       {flowStep === "prompt" && (
@@ -575,12 +605,19 @@ function RewardPage() {
           onContinue={handleGoogleSignIn}
           isLoading={isSigningIn}
           onDecline={handleDecline}
+          rewardData={rewardData}
         />
       )}
       {flowStep === "reward" && user && (
-        <RewardContent copied={copied} onCopy={handleCopyCode} user={user} />
+        <RewardContent
+          copied={copied}
+          onCopy={handleCopyCode}
+          user={user}
+          rewardData={rewardData}
+          onLeaveAnotherReview={handleLeaveAnotherReview}
+        />
       )}
-      {flowStep === "declined" && <DeclinedState onRestart={handleRestart} />}
+      {flowStep === "declined" && <DeclinedState onRestart={handleRestart} rewardData={rewardData} />}
     </RewardLayout>
   );
 }
