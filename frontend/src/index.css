@@ -7,8 +7,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #1f2937;
-  background-color: #ffffff;
+  color: var(--app-foreground);
+  background-color: var(--app-bg);
+}
+
+/* Theme tokens */
+:root {
+  --app-primary: #1A3673;
+  --app-accent: #2563eb;
+  --app-bg: #f8fafc; /* tailwind slate-50 */
+  --app-foreground: #0f172a; /* slate-900 */
+  --app-muted: #6b7280;
+  --app-surface: #E8EDF2;
+  --app-gradient-start: #eef2ff;
+  --app-gradient-mid: #e0e7ff;
+  --app-gradient-end: #c7d2fe;
 }
 
 body {
@@ -31,4 +44,19 @@ body {
   .heading-explanation{
     @apply text-gray-600 mb-6
   }
+}
+
+/* App-level utility classes using tokens */
+@layer utilities {
+  .bg-app-primary { background-color: var(--app-primary); }
+  .text-app-foreground { color: var(--app-foreground); }
+  .bg-app-bg { background-color: var(--app-bg); }
+  .text-app-muted { color: var(--app-muted); }
+  .bg-app-surface { background-color: var(--app-surface); }
+  .bg-app-gradient { background: radial-gradient(circle at top left, var(--app-gradient-start) 0%, var(--app-gradient-mid) 40%, var(--app-gradient-end) 80%); }
+  /* new utilities */
+  .bg-app-accent { background-color: var(--app-accent); }
+  .text-app-primary { color: var(--app-primary); }
+  .btn-app-primary { background-color: var(--app-primary); color: white; }
+  .btn-app-accent { background-color: var(--app-accent); color: white; }
 }
