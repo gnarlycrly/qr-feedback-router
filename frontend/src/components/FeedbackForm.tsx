@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import RatingStars from "./RatingStars";
 
 type FormCustomization = {
@@ -14,16 +16,18 @@ type FormCustomization = {
 
 interface FeedbackFormProps {
   customization?: FormCustomization;
+  businessId?: string;
   // optional path to navigate to after successful submit (e.g. reward page)
   successPath?: string;
   // optional callback to run after successful submit (preferred over successPath)
-  onSuccess?: () => void;
+  onSuccess?: (feedbackData: { rating: number; comment: string }) => void;
 }
 
-export default function FeedbackForm({ customization, successPath, onSuccess }: FeedbackFormProps) {
+export default function FeedbackForm({ customization, businessId, successPath, onSuccess }: FeedbackFormProps) {
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
   const [effectiveCustomization, setEffectiveCustomization] = useState<FormCustomization | undefined>(customization);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +36,34 @@ export default function FeedbackForm({ customization, successPath, onSuccess }: 
       return;
     }
 
+    // If businessId is provided, fetch business data from Firestore
+    if (businessId) {
+      const loadBusinessData = async () => {
+        try {
+          const businessDoc = await getDoc(doc(db, "businesses", businessId));
+          if (businessDoc.exists()) {
+            const businessData = businessDoc.data();
+            const merged: FormCustomization = {
+              businessName: businessData.name || "Sample Business",
+              primaryColor: "#1A3673",
+              accentColor: "#2563eb",
+              headerText: "How was your experience?",
+              ratingPrompt: "Rate your experience",
+              feedbackPrompt: "Tell us more about your experience (optional)",
+              submitButtonText: "Submit Review",
+            };
+            setEffectiveCustomization(merged);
+            return;
+          }
+        } catch (e) {
+          console.error("Error loading business data:", e);
+        }
+      };
+      loadBusinessData();
+      return;
+    }
+
+    // Fallback to localStorage for preview mode
     try {
       const raw = localStorage.getItem("ab_form_settings");
       const businessRaw = localStorage.getItem("ab_business");
@@ -54,32 +86,60 @@ export default function FeedbackForm({ customization, successPath, onSuccess }: 
     } catch (e) {
       setEffectiveCustomization(undefined);
     }
-  }, [customization]);
+  }, [customization, businessId]);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const payload = {
-      businessName: (effectiveCustomization?.businessName) || customization?.businessName || "Sample Business",
-      rating,
-      comments,
-    };
+    if (loading) return; // Prevent double submission
+    setLoading(true);
 
-    console.log("submit:", payload);
+    try {
+      // Save feedback to Firestore if businessId is provided
+      if (businessId) {
+        await addDoc(collection(db, "feedback"), {
+          businessId,
+          businessName: effectiveCustomization?.businessName || "Sample Business",
+          rating,
+          comments,
+          createdAt: serverTimestamp(),
+        });
+        console.log("Feedback saved to Firestore");
+      } else {
+        // Just log for preview mode
+        const payload = {
+          businessName: (effectiveCustomization?.businessName) || customization?.businessName || "Sample Business",
+          rating,
+          comments,
+        };
+        console.log("submit:", payload);
+      }
 
-    // reset form (you can remove this if you don't want auto clear)
-    setRating(0);
-    setComments("");
+      // Create feedback data object to pass to parent
+      const submittedFeedback = {
+        rating,
+        comment: comments,
+      };
 
-    // If parent provided an onSuccess callback, call it. Otherwise navigate in-app to reward.
-    if (onSuccess) {
-      onSuccess();
-      return;
+      // reset form (you can remove this if you don't want auto clear)
+      setRating(0);
+      setComments("");
+
+      // If parent provided an onSuccess callback, call it with feedback data. Otherwise navigate in-app to reward.
+      if (onSuccess) {
+        onSuccess(submittedFeedback);
+        return;
+      }
+
+      const target = successPath ?? "/reward?fromFeedback=1&guest=1";
+      // SPA navigation preserves routing state; include location state so RewardPage knows it came from feedback.
+      navigate(target, { state: { fromFeedback: true, feedback: submittedFeedback } });
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      alert("Failed to submit feedback. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const target = successPath ?? "/reward?fromFeedback=1&guest=1";
-    // SPA navigation preserves routing state; include location state so RewardPage knows it came from feedback.
-    navigate(target, { state: { fromFeedback: true } });
   }
 
   return (
@@ -124,10 +184,11 @@ export default function FeedbackForm({ customization, successPath, onSuccess }: 
         {/* Submit button */}
         <button
           type="submit"
+          disabled={loading}
           style={{ backgroundColor: effectiveCustomization?.accentColor || 'var(--app-accent)' }}
-          className="w-full rounded-md text-white text-sm font-medium py-3 text-center shadow-sm hover:opacity-90 active:scale-[.99] transition"
+          className="w-full rounded-md text-white text-sm font-medium py-3 text-center shadow-sm hover:opacity-90 active:scale-[.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {effectiveCustomization?.submitButtonText || customization?.submitButtonText || "Submit Review"}
+          {loading ? "Submitting..." : (effectiveCustomization?.submitButtonText || customization?.submitButtonText || "Submit Review")}
         </button>
       </form>
     </div>
