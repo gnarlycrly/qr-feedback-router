@@ -2,11 +2,12 @@ import GrayContainer from "../components/GrayContainer";
 import React, { useState, useEffect } from "react";
 import GrayedTextbox from "../components/GrayedTextbox";
 import BlackButton from "../components/BlackButton";
-import { getBusinessData } from "../firebaseHelpers/getBusinessData";
-import { updateBusinessData } from "../firebaseHelpers/updateBusinessData";
+import { useBusinessData } from "../firebaseHelpers/useBusinessData";
+import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
 
 const BusinessInformation = () => {
-  const { business, loading } = getBusinessData();
+  const { business} = useBusinessData();
+  const updateBusinessData = useUpdateBusinessData();
   const [initialized, setInitialized] = useState(false);
   const [formData, setFormData] = useState({
     name: "Loading ...",

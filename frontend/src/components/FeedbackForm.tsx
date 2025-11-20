@@ -5,13 +5,13 @@ import { db } from "../firebaseConfig";
 import RatingStars from "./RatingStars";
 
 type FormCustomization = {
-  businessName: string;
-  primaryColor: string;
-  accentColor: string;
-  headerText: string;
-  ratingPrompt: string;
-  feedbackPrompt: string;
-  submitButtonText: string;
+  customer_businessName: string;
+  customer_primaryColor: string;
+  customer_accentColor: string;
+  customer_headerText: string;
+  customer_ratingPrompt: string;
+  customer_feedbackPrompt: string;
+  customer_submitButtonText: string;
 };
 
 interface FeedbackFormProps {
@@ -44,13 +44,13 @@ export default function FeedbackForm({ customization, businessId, successPath, o
           if (businessDoc.exists()) {
             const businessData = businessDoc.data();
             const merged: FormCustomization = {
-              businessName: businessData.name || "Sample Business",
-              primaryColor: "#1A3673",
-              accentColor: "#2563eb",
-              headerText: "How was your experience?",
-              ratingPrompt: "Rate your experience",
-              feedbackPrompt: "Tell us more about your experience (optional)",
-              submitButtonText: "Submit Review",
+              customer_businessName: businessData.customer_businessName || "Sample Business",
+              customer_primaryColor: businessData.customer_primaryColor || "#1A3673",
+              customer_accentColor: businessData.customer_accentColor || "#2563eb",
+              customer_headerText: businessData.customer_headerText || "How was your experience?",
+              customer_ratingPrompt: businessData.customer_ratingPrompt|| "Rate your experience",
+              customer_feedbackPrompt: businessData.customer_feedbackPrompt || "Tell us more about your experience (optional)",
+              customer_submitButtonText: businessData.customer_submitButtonText || "Submit Review",
             };
             setEffectiveCustomization(merged);
             return;
@@ -73,13 +73,13 @@ export default function FeedbackForm({ customization, businessId, successPath, o
       const theme = themeRaw ? JSON.parse(themeRaw) : undefined;
 
       const merged: FormCustomization = {
-        businessName: business?.businessName || fromForm?.businessName || "Sample Business",
-        primaryColor: theme?.appPrimary || fromForm?.primaryColor || "#1A3673",
-        accentColor: theme?.appAccent || fromForm?.accentColor || "#2563eb",
-        headerText: fromForm?.headerText || "How was your experience?",
-        ratingPrompt: fromForm?.ratingPrompt || "Rate your experience",
-        feedbackPrompt: fromForm?.feedbackPrompt || "Tell us more about your experience (optional)",
-        submitButtonText: fromForm?.submitButtonText || "Submit Review",
+        customer_businessName: business?.businessName || fromForm?.businessName || "Sample Business",
+        customer_primaryColor: theme?.appPrimary || fromForm?.primaryColor || "#1A3673",
+        customer_accentColor: theme?.appAccent || fromForm?.accentColor || "#2563eb",
+        customer_headerText: fromForm?.headerText || "How was your experience?",
+        customer_ratingPrompt: fromForm?.ratingPrompt || "Rate your experience",
+        customer_feedbackPrompt: fromForm?.feedbackPrompt || "Tell us more about your experience (optional)",
+        customer_submitButtonText: fromForm?.submitButtonText || "Submit Review",
       };
 
       setEffectiveCustomization(merged);
@@ -99,7 +99,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
       if (businessId) {
         await addDoc(collection(db, "feedback"), {
           businessId,
-          businessName: effectiveCustomization?.businessName || "Sample Business",
+          businessName: effectiveCustomization?.customer_businessName || "Sample Business",
           rating,
           comments,
           createdAt: serverTimestamp(),
@@ -108,7 +108,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
       } else {
         // Just log for preview mode
         const payload = {
-          businessName: (effectiveCustomization?.businessName) || customization?.businessName || "Sample Business",
+          businessName: (effectiveCustomization?.customer_businessName) || customization?.customer_businessName || "Sample Business",
           rating,
           comments,
         };
@@ -147,11 +147,11 @@ export default function FeedbackForm({ customization, businessId, successPath, o
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
         {/* Header */}
         <div className="text-center">
-          <h1 style={{ color: effectiveCustomization?.primaryColor }} className="font-medium text-lg">
-            {effectiveCustomization?.businessName || customization?.businessName || "Sample Business"}
+          <h1 style={{ color: effectiveCustomization?.customer_primaryColor }} className="font-medium text-lg">
+            {effectiveCustomization?.customer_businessName || customization?.customer_businessName || "Sample Business"}
           </h1>
           <p className="text-gray-600 text-sm mt-2">
-            {effectiveCustomization?.headerText || customization?.headerText || "How was your experience?"}
+            {effectiveCustomization?.customer_headerText || customization?.customer_headerText || "How was your experience?"}
           </p>
         </div>
 
@@ -159,7 +159,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         <div className="flex flex-col items-center text-center">
           <RatingStars value={rating} onChange={setRating} />
           <p className="text-gray-700 text-sm mt-3">
-            {effectiveCustomization?.ratingPrompt || customization?.ratingPrompt || "Rate your experience"}
+            {effectiveCustomization?.customer_ratingPrompt || customization?.customer_ratingPrompt || "Rate your experience"}
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
             htmlFor="comments"
             className="block text-sm font-semibold text-gray-800 mb-2"
           >
-            {effectiveCustomization?.feedbackPrompt || customization?.feedbackPrompt || "Tell us more about your experience (optional)"}
+            {effectiveCustomization?.customer_feedbackPrompt || customization?.customer_feedbackPrompt || "Tell us more about your experience (optional)"}
           </label>
 
           <textarea
@@ -185,10 +185,10 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         <button
           type="submit"
           disabled={loading}
-          style={{ backgroundColor: effectiveCustomization?.accentColor || 'var(--app-accent)' }}
+          style={{ backgroundColor: effectiveCustomization?.customer_accentColor || 'var(--app-accent)' }}
           className="w-full rounded-md text-white text-sm font-medium py-3 text-center shadow-sm hover:opacity-90 active:scale-[.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Submitting..." : (effectiveCustomization?.submitButtonText || customization?.submitButtonText || "Submit Review")}
+          {loading ? "Submitting..." : (effectiveCustomization?.customer_submitButtonText || customization?.customer_submitButtonText || "Submit Review")}
         </button>
       </form>
     </div>

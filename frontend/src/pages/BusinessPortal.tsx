@@ -1,9 +1,8 @@
 // Business portal: simple tabbed interface for business owners to manage rewards, branding, QR codes and preview.
 import { useState } from "react";
-import { Gift, Building, Palette, QrCode, Eye, MessageCircle } from "lucide-react";
+import { Gift, Building, QrCode, Eye, MessageCircle } from "lucide-react";
 import RewardManagement from "./RewardManagement";
 import BusinessInformation from "./BusinessInformation";
-import BrandCustomization from "./BrandCustomization";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
 import CustomerFormPreview from "./CustomerFormPreview";

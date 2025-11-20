@@ -3,15 +3,16 @@ import QRCode from "react-qr-code";
 import GrayContainer from "../components/GrayContainer";
 import BlackButton from "../components/BlackButton";
 import { auth } from "../firebaseConfig";
-import { getBusinessData } from "../firebaseHelpers/getBusinessData";
+import { useBusinessData } from "../firebaseHelpers/useBusinessData";
+import {useAuth} from "../firebaseHelpers/AuthContext";
 
 const QRCodeGeneration = () => {
   const qrRef = useRef<HTMLDivElement>(null);
   const currentUser = auth.currentUser;
-  const { business, loading } = getBusinessData();
+  const { business, loading } = useBusinessData();
 
   // Generate the feedback URL with business ID (user's UID)
-  const businessId = currentUser?.uid || "";
+  const { businessId } = useAuth();
   const feedbackUrl = `${window.location.origin}/feedback?business=${businessId}`;
 
   const handleDownloadPNG = () => {
