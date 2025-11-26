@@ -12,6 +12,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date";
 
@@ -51,104 +53,22 @@ const REVIEW_TAG_STYLES: Record<ReviewTag, string> = {
   flagged: "bg-red-500 text-white",
 };
 
-const STAT_CARDS: StatCardData[] = [
-  {
-    id: "total-reviews",
-    title: "Total Reviews",
-    value: "247",
-    icon: MessageCircle,
-    iconColorClass: "text-blue-500",
-  },
-  {
-    id: "average-rating",
-    title: "Average Rating",
-    value: "4.7",
-    rating: 4.7,
-    icon: StarIcon,
-    iconColorClass: "text-yellow-400",
-  },
-  {
-    id: "response-rate",
-    title: "Response Rate",
-    value: "89%",
-    icon: Users,
-    iconColorClass: "text-green-500",
-    trend: {
-      label: "+5% from last month",
-      colorClass: "text-green-600",
-    },
-  },
-  {
-    id: "rewards-redeemed",
-    title: "Rewards Redeemed",
-    value: "156",
-    icon: Gift,
-    iconColorClass: "text-purple-500",
-    trend: {
-      label: "+8% from last month",
-      colorClass: "text-purple-600",
-    },
-  },
-];
 
-const RECENT_REVIEWS: Review[] = [
-  {
-    id: 1,
-    reviewer: "Sarah M.",
-    rating: 5,
-    tag: "new",
-    message: "Amazing food and excellent service! We will definitely be back again.",
-    timestamp: "2 hours ago",
-  },
-  {
-    id: 2,
-    reviewer: "John D.",
-    rating: 4,
-    tag: "reviewed",
-    message: "Great atmosphere and friendly staff. The wait time was a bit long, but worth it!",
-    timestamp: "5 hours ago",
-  },
-  {
-    id: 3,
-    reviewer: "Maria L.",
-    rating: 2,
-    tag: "flagged",
-    message: "Food was cold when it arrived and the staff seemed overwhelmed.",
-    timestamp: "1 day ago",
-  },
-];
 
-const NEGATIVE_REVIEWS: NegativeReview[] = [
-  {
-    id: 11,
-    reviewer: "Maria L.",
-    rating: 2,
-    tag: "flagged",
-    message: "Food was cold when it arrived and the staff seemed overwhelmed.",
-    timestamp: "1 day ago",
-    reason: "Temperature and service delays",
-  },
-  {
-    id: 12,
-    reviewer: "Travis P.",
-    rating: 1,
-    tag: "flagged",
-    message: "Staff forgot my order twice and the manager never came to apologize.",
-    timestamp: "3 days ago",
-    reason: "Order accuracy",
-  },
-  {
-    id: 13,
-    reviewer: "Leah S.",
-    rating: 2,
-    tag: "flagged",
-    message: "Music was way too loud and ruined our dinner. Food was just ok.",
-    timestamp: "4 days ago",
-    reason: "In-store experience",
-  },
-];
+
 
 const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date"];
+
+const getTimeAgo = (date: Date): string => {
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? 's' : ''} ago`;
+};
 
 const renderStars = (rating: number) => {
   return (
@@ -173,6 +93,9 @@ function CustomerServiceDashboardPage() {
   const [isNegativeDrawerOpen, setIsNegativeDrawerOpen] = useState(false);
   const [exportQueued, setExportQueued] = useState(false);
   const exportTimeoutRef = useRef<number | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [negativeReviews, setNegativeReviews] = useState<NegativeReview[]>([]);
+  const [stats, setStats] = useState({ totalReviews: 0, avgRating: 0, responseRate: 0, rewardsRedeemed: 0 });
 
   const handleCycleRange = () => {
     const currentIndex = rangeOptions.indexOf(selectedRange);
@@ -198,7 +121,56 @@ function CustomerServiceDashboardPage() {
   };
 
   useEffect(() => {
+    const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allReviews: Review[] = [];
+      const flaggedReviews: NegativeReview[] = [];
+      let totalRating = 0;
+      let rewardsCount = 0;
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const createdAt = data.createdAt?.toDate();
+        const timeAgo = createdAt ? getTimeAgo(createdAt) : "Just now";
+        
+        const review: Review = {
+          id: parseInt(doc.id.slice(-6), 36),
+          reviewer: "Customer",
+          rating: data.rating || 0,
+          tag: data.rating <= 2 ? "flagged" : "new",
+          message: data.comments || "No comment provided",
+          timestamp: timeAgo,
+        };
+        
+        allReviews.push(review);
+        totalRating += data.rating || 0;
+        
+        if (data.rating >= 4) rewardsCount++;
+        
+        if (data.rating <= 2) {
+          flaggedReviews.push({
+            ...review,
+            reason: "Low rating feedback",
+          });
+        }
+      });
+      
+      const total = snapshot.size;
+      const avgRating = total > 0 ? totalRating / total : 0;
+      const responseRate = total > 0 ? Math.round((total / (total + negativeReviews.length)) * 100) : 0;
+      
+      setReviews(allReviews.slice(0, 20));
+      setNegativeReviews(flaggedReviews);
+      setStats({
+        totalReviews: total,
+        avgRating: Math.round(avgRating * 10) / 10,
+        responseRate,
+        rewardsRedeemed: rewardsCount
+      });
+    });
+    
     return () => {
+      unsubscribe();
       if (exportTimeoutRef.current) {
         window.clearTimeout(exportTimeoutRef.current);
       }
@@ -264,34 +236,55 @@ function CustomerServiceDashboardPage() {
         )}
 
         <section className="mt-8 space-y-4">
-          {STAT_CARDS.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.id}
-                className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm"
-              >
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                    {card.title}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-gray-900">{card.value}</span>
-                    {card.rating && renderStars(card.rating)}
-                  </div>
-                  {card.trend && (
-                    <p className={`flex items-center gap-1 text-sm font-medium ${card.trend.colorClass}`}>
-                      <ArrowUpRight className="h-4 w-4" />
-                      {card.trend.label}
-                    </p>
-                  )}
-                </div>
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
-                  <Icon className={`h-6 w-6 ${card.iconColorClass}`} />
-                </div>
+          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Reviews</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-gray-900">{stats.totalReviews}</span>
               </div>
-            );
-          })}
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
+              <MessageCircle className="h-6 w-6 text-blue-500" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Average Rating</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-gray-900">{stats.avgRating.toFixed(1)}</span>
+                {renderStars(stats.avgRating)}
+              </div>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
+              <StarIcon className="h-6 w-6 text-yellow-400" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Response Rate</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-gray-900">{stats.responseRate}%</span>
+              </div>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
+              <Users className="h-6 w-6 text-green-500" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Rewards Redeemed</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-gray-900">{stats.rewardsRedeemed}</span>
+              </div>
+            </div>
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
+              <Gift className="h-6 w-6 text-purple-500" />
+            </div>
+          </div>
+
         </section>
 
         <section className="mt-8 space-y-4">
@@ -301,7 +294,10 @@ function CustomerServiceDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {RECENT_REVIEWS.map((review) => (
+            {reviews.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No reviews yet</p>
+            ) : (
+              reviews.map((review) => (
               <article key={review.id} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between">
                   <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
@@ -315,7 +311,8 @@ function CustomerServiceDashboardPage() {
                 <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
                 <p className="text-xs text-gray-400">{review.timestamp}</p>
               </article>
-            ))}
+            ))
+            )}
           </div>
         </section>
 
@@ -325,22 +322,24 @@ function CustomerServiceDashboardPage() {
             <p className="text-sm text-gray-500">Tasks that need your attention</p>
           </div>
 
-          <div className="flex items-center gap-4 rounded-xl bg-red-50 p-4 shadow-sm">
-            <span className="text-red-600">
-              <AlertTriangle className="h-6 w-6" />
-            </span>
-            <div className="flex-1 space-y-1">
-              <p className="text-base font-semibold text-red-700">3 Negative Reviews</p>
-              <p className="text-sm text-red-600">Require immediate response and follow-up</p>
+          {negativeReviews.length > 0 && (
+            <div className="flex items-center gap-4 rounded-xl bg-red-50 p-4 shadow-sm">
+              <span className="text-red-600">
+                <AlertTriangle className="h-6 w-6" />
+              </span>
+              <div className="flex-1 space-y-1">
+                <p className="text-base font-semibold text-red-700">{negativeReviews.length} Negative Review{negativeReviews.length > 1 ? 's' : ''}</p>
+                <p className="text-sm text-red-600">Require immediate response and follow-up</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNegativeDrawerOpen(true)}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                Review Now
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsNegativeDrawerOpen(true)}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-            >
-              Review Now
-            </button>
-          </div>
+          )}
         </section>
       </div>
 
@@ -376,7 +375,7 @@ function CustomerServiceDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {NEGATIVE_REVIEWS.map((review) => (
+              {negativeReviews.map((review) => (
                 <article
                   key={review.id}
                   className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
