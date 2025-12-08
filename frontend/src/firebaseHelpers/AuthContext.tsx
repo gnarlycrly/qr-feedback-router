@@ -1,34 +1,62 @@
-import { createContext, useEffect, useState} from "react";
-import type {ReactNode} from "react";
-import { onAuthStateChanged} from "firebase/auth";
-import type {User} from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { auth, db } from "../firebaseConfig";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
+  businessId: string | null;
   loading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  businessId: null,
   loading: true,
 });
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [businessId, setBusinessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+
+      if (!u) {
+        setBusinessId(null);
+        setLoading(false);
+        return;
+      }
+
+      // Lookup businessId
+      const q = query(
+        collection(db, "businesses"),
+        where("ownerIds", "array-contains", u.uid)
+      );
+
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        setBusinessId(snap.docs[0].id);
+      } else {
+        setBusinessId(null);
+      }
+
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    return unsub;
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, businessId, loading }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
