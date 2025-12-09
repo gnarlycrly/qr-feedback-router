@@ -1,17 +1,7 @@
-import { Calendar } from "lucide-react";
+// import { Calendar } from "lucide-react";
 import GrayContainer from "./GrayContainer";
 import BlackButton from "./BlackButton";
-
-type Reward = {
-  id: number;
-  title: string;
-  description: string;
-  type: "Percentage Discount" | "Free Item";
-  value: string;
-  created: string;
-  expires: string;
-  active: boolean;
-};
+import {type Reward} from "../components/RewardType";
 
 type RewardCardProps = {
   reward: Reward;
@@ -25,12 +15,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive }) => {
         <h3 className="font-semibold text-gray-800">{reward.title}</h3>
         <p className="text-sm text-gray-600">{reward.description}</p>
         <div className="text-xs text-gray-500 mt-1 flex gap-4">
-          <span>{reward.type}</span>
-          <span>
-            <Calendar className="inline w-3 h-3 mr-1" />
-            {reward.created}
-          </span>
-          <span>Expires: {reward.expires}</span>
+          <span>{reward.type + " - " + reward.value }</span>
         </div>
       </div>
       <BlackButton
