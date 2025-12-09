@@ -9,8 +9,6 @@ type Reward = {
   description: string;
   type: "Percentage Discount" | "Free Item";
   value: string;
-  created: string;
-  expires: string;
 };
 
 type RewardAddWindowProps = {
@@ -25,8 +23,6 @@ const RewardAddWindow: React.FC<RewardAddWindowProps> = ({ isOpen, onClose, onSu
     description: "",
     type: "Percentage Discount",
     value: "",
-    created: "",
-    expires: "",
   });
 
   if (!isOpen) return null;
@@ -68,7 +64,7 @@ const RewardAddWindow: React.FC<RewardAddWindowProps> = ({ isOpen, onClose, onSu
             value={newReward.value}
             onChange={(e) => setNewReward({ ...newReward, value: e.target.value })}
           />
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             <GrayedTextbox
               type="date"
               className="w-1/2"
@@ -81,7 +77,7 @@ const RewardAddWindow: React.FC<RewardAddWindowProps> = ({ isOpen, onClose, onSu
               value={newReward.expires}
               onChange={(e) => setNewReward({ ...newReward, expires: e.target.value })}
             />
-          </div>
+          </div> */}
           <BlackButton
             onClick={() => {
               if (!newReward.title || !newReward.value) return;
@@ -91,8 +87,6 @@ const RewardAddWindow: React.FC<RewardAddWindowProps> = ({ isOpen, onClose, onSu
                 description: "",
                 type: "Percentage Discount",
                 value: "",
-                created: "",
-                expires: "",
               });
             }}
             label="Create Reward"

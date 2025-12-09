@@ -7,44 +7,32 @@ import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
 import { auth } from "../firebaseConfig";
 import { signOut } from "firebase/auth";
-
-type Reward = {
-  id: number;
-  title: string;
-  description: string;
-  type: "Percentage Discount" | "Free Item";
-  value: string;
-  created: string;
-  expires: string;
-  active: boolean;
-};
+import {type Reward} from "../components/RewardType";
+import { useRewards } from "../firebaseHelpers/useRewards";
+import { useAuth } from "../firebaseHelpers/AuthContext"; 
 
 const RewardManagement = () => {
 
-  // switch to database population eventually
-  const [rewards, setRewards] = useState<Reward[]>([
-    {
-      id: 1,
-      title: "15% Off Next Visit",
-      description: "Valid for your next purchase within 30 days.",
-      type: "Percentage Discount",
-      value: "15%",
-      created: "2025-10-01",
-      expires: "2025-10-31",
-      active: true,
-    },
-  ]);
-
+  const { businessId } = useAuth(); 
+  if(!businessId){
+    return <p>Loading...</p>;
+  }
+  const {rewards, setRewards, saveRewards} = useRewards(businessId); 
   const [showAddWindow, setShowAddWindow] = useState(false);
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
-    const reward: Reward = { ...newReward, id: rewards.length + 1, active: true };
-    setRewards([...rewards, reward]);
+    console.log(newReward);
+    const reward: Reward = { ...newReward, id: rewards.length + 1, active: false };
+    const updated = [...rewards, reward]
+    setRewards(updated);
     setShowAddWindow(false);
+    saveRewards(updated);
   };
 
   const toggleRewardActive = (id: number) => {
-    setRewards(rewards.map((r) => (r.id === id ? { ...r, active: !r.active } : r)));
+    const updated = rewards.map((r) => (r.id === id ? { ...r, active: !r.active } : r));
+    setRewards(updated);
+    saveRewards(updated);
   };
 
   const stats = {
@@ -55,6 +43,7 @@ const RewardManagement = () => {
   };
 
   return (
+    <div>
     <GrayContainer>
       <div className="flex items-center justify-between mb-6">
         <h1 className="page-heading">Reward Management</h1>
@@ -85,8 +74,9 @@ const RewardManagement = () => {
         onClose={() => setShowAddWindow(false)}
         onSubmit={addReward}
       />
-      <BlackButton onClick={() => signOut(auth)} label="Sign Out"></BlackButton>
     </GrayContainer>
+    <BlackButton onClick={() => signOut(auth)} label="Sign Out"></BlackButton>
+    </div>
   );
 };
 

@@ -3,9 +3,9 @@ import { db } from "../firebaseConfig";
 import { useAuth } from "./AuthContext";
 
 /**
- * Hook to update the current business.
- * Automatically uses the businessId from AuthContext.
- */
+* Hook to update the current business.
+* Automatically uses the businessId from AuthContext.
+*/
 export function useUpdateBusinessData() {
   const { businessId } = useAuth();
 
