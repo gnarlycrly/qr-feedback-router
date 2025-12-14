@@ -53,6 +53,7 @@ export default function Login() {
       setError(err.message || "Failed to create account.");
     } finally {
       setLoading(false);
+      handleBusinessSetup()
     }
   };
 
@@ -60,6 +61,7 @@ export default function Login() {
   const handleBusinessSetup = async () => {
     setError(null);
     setLoading(true);
+    
     try {
       const pendingUserRaw = localStorage.getItem("pendingUser");
       if (!pendingUserRaw) throw new Error("No user session found");

@@ -3,13 +3,17 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { type Reward } from "../components/RewardType"; // ✅ Correct import
 
-export function useRewards(businessId: string) {
+export function useRewards(businessId: string | null) {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchRewards() {
-      if (!businessId) return;
+      if (!businessId) {
+        setRewards([]);
+        setLoading(false);
+        return;
+      }
 
       const ref = doc(db, "businesses", businessId);
       const snap = await getDoc(ref);

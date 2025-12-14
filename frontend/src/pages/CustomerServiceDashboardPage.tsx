@@ -7,7 +7,8 @@ import {
   Star as StarIcon,
   X,
 } from "lucide-react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { useAuth } from "../firebaseHelpers/AuthContext";
 import { db } from "../firebaseConfig";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date";
@@ -98,6 +99,7 @@ function CustomerServiceDashboardPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [negativeReviews, setNegativeReviews] = useState<NegativeReview[]>([]);
   const [stats, setStats] = useState({ totalReviews: 0, avgRating: 0, responseRate: 0, rewardsRedeemed: 0 });
+  const { businessId } = useAuth();
 
   const handleCycleRange = () => {
     const currentIndex = rangeOptions.indexOf(selectedRange);
@@ -112,7 +114,7 @@ function CustomerServiceDashboardPage() {
   };
 
   useEffect(() => {
-    const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "feedback"), where("businessId", "==", businessId),  orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const filterDate = getDateRangeFilter(selectedRange);
       const allReviews: Review[] = [];

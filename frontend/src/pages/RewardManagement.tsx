@@ -14,11 +14,6 @@ type RewardManagementProps = {
 
 const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementProps) => {
   const { businessId } = useAuth();
-
-  if (!businessId) {
-    return <p>Loading...</p>;
-  }
-
   const { rewards, setRewards, saveRewards } = useRewards(businessId);
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {

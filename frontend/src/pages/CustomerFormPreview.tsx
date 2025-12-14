@@ -16,6 +16,7 @@ type FormCustomization = {
 };
 
 const CustomerFormPreview = () => {
+  const [saving, setSaving] = useState(false);
   const [formSettings, setFormSettings] = useState<FormCustomization>({
     customer_businessName: "",
     customer_primaryColor: "#4f46e5", // indigo-600
@@ -72,6 +73,7 @@ const CustomerFormPreview = () => {
   const navigate = useNavigate();
 
   const handleSave = async () => {
+    setSaving(true);
     // Update theme
     document.documentElement.style.setProperty("--app-primary", formSettings.customer_primaryColor);
     document.documentElement.style.setProperty("--app-accent", formSettings.customer_accentColor);
@@ -102,7 +104,7 @@ const CustomerFormPreview = () => {
       console.error("Error updating Firestore:", err);
       alert("Error saving data: " + err.message);
     } finally {
-
+      setSaving(false);
     }
   };
 
@@ -225,7 +227,7 @@ const CustomerFormPreview = () => {
             onClick={handleSave}
             className="w-full bg-app-primary text-white rounded-lg px-4 py-2 hover:opacity-90 transition"
           >
-            Save Changes
+            {saving ? "Saving ..." : "Save Changes"}
           </button>
           <button
             onClick={() => navigate(`/feedback?business=${businessId}`, { state: { next: "/reward" } })}

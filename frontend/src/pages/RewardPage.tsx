@@ -3,7 +3,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-
+import {type Reward} from "../components/RewardType";
 type RewardDetails = {
   customerReview: {
     rating: number;
@@ -253,6 +253,7 @@ const RewardContent = ({
 function RewardPage() {
   const [copied, setCopied] = useState(false);
   const [businessName, setBusinessName] = useState<string>(mockRewardData.businessName);
+  const [rewardInfo,setRewardInfo] = useState<Reward>();
   const location = useLocation();
 
   // Get feedback data and business info from navigation state
@@ -272,7 +273,14 @@ function RewardPage() {
           if (businessDoc.exists()) {
             const data = businessDoc.data();
             setBusinessName(data.name || mockRewardData.businessName);
-          }
+            if(data.rewards){
+              for(const rew of data.rewards)
+                if(rew.active){
+                  setRewardInfo(rew);
+                  break;
+                }
+              }
+            }
         } catch (error) {
           console.error("Error loading business data:", error);
         }
@@ -281,13 +289,18 @@ function RewardPage() {
     loadBusinessData();
   }, [businessId]);
 
+
   const rewardData: RewardDetails = {
     customerReview: {
       rating: feedbackData.rating || mockRewardData.customerReview.rating,
       comment: feedbackData.comment || mockRewardData.customerReview.comment,
     },
     businessName: businessName,
-    reward: mockRewardData.reward,
+    reward: {
+      ...mockRewardData.reward,
+      title: rewardInfo?.title ?? mockRewardData.reward.title,
+      description: rewardInfo?.description ?? mockRewardData.reward.description,
+    }
   };
 
   const handleCopyCode = async () => {
