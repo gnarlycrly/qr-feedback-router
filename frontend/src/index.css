@@ -11,17 +11,24 @@
   background-color: var(--app-bg);
 }
 
-/* Theme tokens */
+/* Modern Theme Tokens */
 :root {
-  --app-primary: #1A3673;
-  --app-accent: #2563eb;
-  --app-bg: #f8fafc; /* tailwind slate-50 */
-  --app-foreground: #0f172a; /* slate-900 */
-  --app-muted: #6b7280;
-  --app-surface: #E8EDF2;
-  --app-gradient-start: #eef2ff;
-  --app-gradient-mid: #e0e7ff;
-  --app-gradient-end: #c7d2fe;
+  --app-primary: #2563eb; /* vibrant blue */
+  --app-primary-dark: #1e40af;
+  --app-primary-light: #3b82f6;
+  --app-accent: #8b5cf6; /* purple accent */
+  --app-accent-light: #a78bfa;
+  --app-bg: #f8fafc; /* clean slate background */
+  --app-foreground: #0f172a; /* deep text */
+  --app-muted: #64748b; /* muted text */
+  --app-surface: #ffffff; /* clean white surfaces */
+  --app-border: #e2e8f0; /* subtle borders */
+  --app-hover: #f1f5f9; /* hover states */
+  --app-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --app-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --app-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --app-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --app-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 body {
@@ -33,30 +40,172 @@ body {
   box-sizing: border-box;
 }
 
-/* src/index.css */
-@layer components {
-  .page-heading {
-    @apply text-2xl font-semibold text-gray-800 mb-4;
-  }
-  .secondary-heading{
-    @apply block text-gray-700 mb-2 font-medium
-  }
-  .heading-explanation{
-    @apply text-gray-600 mb-6
-  }
+/* Modern Component Styles */
+.page-heading {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: rgb(17 24 39);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
 }
 
-/* App-level utility classes using tokens */
-@layer utilities {
-  .bg-app-primary { background-color: var(--app-primary); }
-  .text-app-foreground { color: var(--app-foreground); }
-  .bg-app-bg { background-color: var(--app-bg); }
-  .text-app-muted { color: var(--app-muted); }
-  .bg-app-surface { background-color: var(--app-surface); }
-  .bg-app-gradient { background: radial-gradient(circle at top left, var(--app-gradient-start) 0%, var(--app-gradient-mid) 40%, var(--app-gradient-end) 80%); }
-  /* new utilities */
-  .bg-app-accent { background-color: var(--app-accent); }
-  .text-app-primary { color: var(--app-primary); }
-  .btn-app-primary { background-color: var(--app-primary); color: white; }
-  .btn-app-accent { background-color: var(--app-accent); color: white; }
+.secondary-heading {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(55 65 81);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.heading-explanation {
+  font-size: 1rem;
+  color: rgb(75 85 99);
+  margin-bottom: 2rem;
+  line-height: 1.625;
+}
+
+/* Modern Input Styles */
+.input-modern {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid rgb(229 231 235);
+  background-color: white;
+  color: rgb(17 24 39);
+  transition: all 200ms;
+  outline: none;
+}
+
+.input-modern::placeholder {
+  color: rgb(156 163 175);
+}
+
+.input-modern:focus {
+  border-color: rgb(59 130 246);
+  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.1);
+}
+
+/* Modern Button Styles */
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(to right, rgb(37 99 235), rgb(59 130 246));
+  box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.3);
+  transition: all 200ms;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, rgb(29 78 216), rgb(37 99 235));
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.5);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: rgb(55 65 81);
+  background-color: white;
+  border: 2px solid rgb(229 231 235);
+  transition: all 200ms;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: rgb(249 250 251);
+  border-color: rgb(209 213 219);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(107 114 128 / 0.2);
+}
+
+/* Modern Card Styles */
+.card-modern {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border: 1px solid rgb(243 244 246);
+  padding: 1.5rem;
+  transition: all 200ms;
+}
+
+.card-modern-hover {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border: 1px solid rgb(243 244 246);
+  padding: 1.5rem;
+  transition: all 200ms;
+}
+
+.card-modern-hover:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  transform: translateY(-0.125rem);
+}
+
+/* Modern Utility Classes */
+.bg-app-primary { background-color: var(--app-primary); }
+.bg-app-primary-dark { background-color: var(--app-primary-dark); }
+.text-app-foreground { color: var(--app-foreground); }
+.bg-app-bg { background-color: var(--app-bg); }
+.text-app-muted { color: var(--app-muted); }
+.bg-app-surface { background-color: var(--app-surface); }
+.bg-app-gradient { background: var(--app-gradient); }
+.bg-app-accent { background-color: var(--app-accent); }
+.text-app-primary { color: var(--app-primary); }
+.border-app { border-color: var(--app-border); }
+
+.shadow-app-sm { box-shadow: var(--app-shadow-sm); }
+.shadow-app-md { box-shadow: var(--app-shadow-md); }
+.shadow-app-lg { box-shadow: var(--app-shadow-lg); }
+.shadow-app-xl { box-shadow: var(--app-shadow-xl); }
+
+/* Legacy button support */
+.btn-app-primary { 
+  background: linear-gradient(to right, rgb(37 99 235), rgb(59 130 246));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.3);
+  transition: all 200ms;
+  border: none;
+}
+
+.btn-app-primary:hover {
+  background: linear-gradient(to right, rgb(29 78 216), rgb(37 99 235));
+}
+
+.btn-app-accent { 
+  background: linear-gradient(to right, rgb(147 51 234), rgb(168 85 247));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 10px 15px -3px rgb(147 51 234 / 0.3);
+  transition: all 200ms;
+  border: none;
+}
+
+.btn-app-accent:hover {
+  background: linear-gradient(to right, rgb(126 34 206), rgb(147 51 234));
 }

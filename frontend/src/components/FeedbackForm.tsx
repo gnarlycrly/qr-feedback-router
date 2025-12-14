@@ -143,22 +143,25 @@ export default function FeedbackForm({ customization, businessId, successPath, o
   }
 
   return (
-    <div className="w-full max-w-md bg-white rounded-lg shadow-[0_15px_25px_rgba(0,0,0,0.08)] border border-gray-200 p-6">
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
         {/* Header */}
-        <div className="text-center">
-          <h1 style={{ color: effectiveCustomization?.customer_primaryColor }} className="font-medium text-lg">
+        <div className="text-center pb-4 border-b border-gray-100">
+          <h1 
+            style={{ color: effectiveCustomization?.customer_primaryColor || '#2563eb' }} 
+            className="font-bold text-2xl mb-2"
+          >
             {effectiveCustomization?.customer_businessName || customization?.customer_businessName || "Sample Business"}
           </h1>
-          <p className="text-gray-600 text-sm mt-2">
+          <p className="text-gray-600 text-base">
             {effectiveCustomization?.customer_headerText || customization?.customer_headerText || "How was your experience?"}
           </p>
         </div>
 
         {/* Stars */}
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-center text-center py-4">
           <RatingStars value={rating} onChange={setRating} />
-          <p className="text-gray-700 text-sm mt-3">
+          <p className="text-gray-700 text-base mt-4 font-medium">
             {effectiveCustomization?.customer_ratingPrompt || customization?.customer_ratingPrompt || "Rate your experience"}
           </p>
         </div>
@@ -167,14 +170,14 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         <div className="text-left">
           <label
             htmlFor="comments"
-            className="block text-sm font-semibold text-gray-800 mb-2"
+            className="block text-sm font-semibold text-gray-700 mb-3"
           >
             {effectiveCustomization?.customer_feedbackPrompt || customization?.customer_feedbackPrompt || "Tell us more about your experience (optional)"}
           </label>
 
           <textarea
             id="comments"
-            className="w-full rounded-md border border-gray-300 bg-gray-100 text-gray-800 text-sm p-3 outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white min-h-[90px]"
+            className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[120px] transition-all duration-200 resize-none"
             placeholder="What did you like most? Any suggestions for improvement?"
             value={comments}
             onChange={(e) => setComments(e.target.value)}
@@ -184,11 +187,17 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         {/* Submit button */}
         <button
           type="submit"
-          disabled={loading}
-          style={{ backgroundColor: effectiveCustomization?.customer_accentColor || 'var(--app-accent)' }}
-          className="w-full rounded-md text-white text-sm font-medium py-3 text-center shadow-sm hover:opacity-90 active:scale-[.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || rating === 0}
+          style={{ 
+            backgroundColor: effectiveCustomization?.customer_accentColor || 'var(--app-accent)',
+            opacity: loading || rating === 0 ? 0.6 : 1
+          }}
+          className="w-full rounded-xl text-white text-base font-semibold py-4 text-center shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          {loading ? "Submitting..." : (effectiveCustomization?.customer_submitButtonText || customization?.customer_submitButtonText || "Submit Review")}
+          {loading 
+            ? "Submitting..." 
+            : (effectiveCustomization?.customer_submitButtonText || customization?.customer_submitButtonText || "Submit Review")
+          }
         </button>
       </form>
     </div>

@@ -188,7 +188,7 @@ const RewardContent = ({
           <button
             type="button"
             onClick={onCopy}
-            className="rounded-xl border border-gray-300 bg-white p-3 transition duration-150 hover:bg-gray-50 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+            className="rounded-xl border border-gray-300 bg-white p-3 transition duration-150 hover:bg-gray-50 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
             aria-label={
               copied ? "Promo code copied to clipboard" : "Copy promo code"
             }
