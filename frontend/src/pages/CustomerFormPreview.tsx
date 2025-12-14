@@ -58,8 +58,8 @@ const CustomerFormPreview = () => {
       if (business && !initialized) {
         setFormSettings({
           customer_businessName: business.customer_businessName || "Sample Business",
-          customer_primaryColor: "#1A3673",
-          customer_accentColor: "#2563eb",
+          customer_primaryColor: business.customer_primaryColor || "#1A3673",
+          customer_accentColor: business.customer_accentColor || "#2563eb",
           customer_headerText: business.customer_headerText || "How was your experience?",
           customer_ratingPrompt: business.customer_ratingPrompt|| "Rate your experience",
           customer_feedbackPrompt: business.customer_feedbackPrompt || "Tell us more about your experience (optional)",

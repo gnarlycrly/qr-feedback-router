@@ -1,8 +1,8 @@
 import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
 
-import { auth } from "../firebaseConfig";
-import { signOut } from "firebase/auth";
+// import { auth } from "../firebaseConfig";
+// import { signOut } from "firebase/auth";
 import { type Reward } from "../components/RewardType";
 import { useRewards } from "../firebaseHelpers/useRewards";
 import { useAuth } from "../firebaseHelpers/AuthContext";
@@ -60,9 +60,9 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
         onSubmit={addReward}
       />
 
-      <button onClick={() => signOut(auth)} className="mt-6">
+      {/* <button onClick={() => signOut(auth)} className="mt-6">
         Sign Out
-      </button>
+      </button> */}
     </div>
   );
 };
