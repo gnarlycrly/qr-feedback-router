@@ -1,36 +1,16 @@
 // Dashboard for customer service teams — shows quick stats, recent reviews and action items.
-import { useEffect, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
-  ArrowUpRight,
   Calendar,
-  Download,
-  Gift,
   MessageCircle,
   Star as StarIcon,
-  Users,
   X,
 } from "lucide-react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date";
-
-type StatTrend = {
-  label: string;
-  colorClass: string;
-};
-
-type StatCardData = {
-  id: string;
-  title: string;
-  value: string;
-  icon: LucideIcon;
-  iconColorClass: string;
-  rating?: number;
-  trend?: StatTrend;
-};
 
 type ReviewTag = "new" | "reviewed" | "flagged";
 
@@ -58,6 +38,30 @@ const REVIEW_TAG_STYLES: Record<ReviewTag, string> = {
 
 
 const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date"];
+
+const getDateRangeFilter = (range: RangeOption): Date => {
+  const now = new Date();
+  const result = new Date();
+  
+  switch (range) {
+    case "Last 7 days":
+      result.setDate(now.getDate() - 7);
+      break;
+    case "Last 30 days":
+      result.setDate(now.getDate() - 30);
+      break;
+    case "Quarter to date":
+      // Calculate start of current quarter
+      const currentMonth = now.getMonth();
+      const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
+      result.setMonth(quarterStartMonth);
+      result.setDate(1);
+      result.setHours(0, 0, 0, 0);
+      break;
+  }
+  
+  return result;
+};
 
 const getTimeAgo = (date: Date): string => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -91,8 +95,6 @@ function CustomerServiceDashboardPage() {
   const [selectedRange, setSelectedRange] = useState<RangeOption>("Last 30 days");
   const [isRangeMenuOpen, setIsRangeMenuOpen] = useState(false);
   const [isNegativeDrawerOpen, setIsNegativeDrawerOpen] = useState(false);
-  const [exportQueued, setExportQueued] = useState(false);
-  const exportTimeoutRef = useRef<number | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [negativeReviews, setNegativeReviews] = useState<NegativeReview[]>([]);
   const [stats, setStats] = useState({ totalReviews: 0, avgRating: 0, responseRate: 0, rewardsRedeemed: 0 });
@@ -109,20 +111,10 @@ function CustomerServiceDashboardPage() {
     setIsRangeMenuOpen(false);
   };
 
-  const handleExportReport = () => {
-    if (exportTimeoutRef.current) {
-      window.clearTimeout(exportTimeoutRef.current);
-    }
-    setExportQueued(true);
-    exportTimeoutRef.current = window.setTimeout(() => {
-      setExportQueued(false);
-      exportTimeoutRef.current = null;
-    }, 2400);
-  };
-
   useEffect(() => {
     const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      const filterDate = getDateRangeFilter(selectedRange);
       const allReviews: Review[] = [];
       const flaggedReviews: NegativeReview[] = [];
       let totalRating = 0;
@@ -131,6 +123,12 @@ function CustomerServiceDashboardPage() {
       snapshot.forEach((doc) => {
         const data = doc.data();
         const createdAt = data.createdAt?.toDate();
+        
+        // Filter by date range
+        if (createdAt && createdAt < filterDate) {
+          return; // Skip reviews outside the selected date range
+        }
+        
         const timeAgo = createdAt ? getTimeAgo(createdAt) : "Just now";
         
         const review: Review = {
@@ -169,33 +167,20 @@ function CustomerServiceDashboardPage() {
       });
     });
     
-    return () => {
-      unsubscribe();
-      if (exportTimeoutRef.current) {
-        window.clearTimeout(exportTimeoutRef.current);
-      }
-    };
-  }, []);
+    return () => unsubscribe();
+  }, [selectedRange]); // Re-run when selectedRange changes
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
       <div className="relative mx-auto flex max-w-md flex-col px-5 py-6">
         {/* header removed: title/subtitle duplicated in Business Portal; content flows directly into stats */}
 
-        <section className="mt-6 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={handleExportReport}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-400"
-          >
-            <Download className="h-4 w-4" />
-            Export Report
-          </button>
-          <div className="relative flex-1">
+        <section className="mt-6 flex items-center justify-end gap-3">
+          <div className="relative flex-1 max-w-xs">
             <button
               type="button"
               onClick={() => (isRangeMenuOpen ? handleCycleRange() : setIsRangeMenuOpen(true))}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
             >
               <Calendar className="h-4 w-4" />
               {selectedRange}
@@ -228,14 +213,7 @@ function CustomerServiceDashboardPage() {
           </div>
         </section>
 
-        {exportQueued && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-            <ArrowUpRight className="h-4 w-4 rotate-45 text-green-500" />
-            Export queued - you&apos;ll receive an email shortly.
-          </div>
-        )}
-
-        <section className="mt-8 space-y-4">
+        <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Reviews</p>
@@ -258,30 +236,6 @@ function CustomerServiceDashboardPage() {
             </div>
             <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
               <StarIcon className="h-6 w-6 text-yellow-400" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Response Rate</p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900">{stats.responseRate}%</span>
-              </div>
-            </div>
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
-              <Users className="h-6 w-6 text-green-500" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Rewards Redeemed</p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900">{stats.rewardsRedeemed}</span>
-              </div>
-            </div>
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
-              <Gift className="h-6 w-6 text-purple-500" />
             </div>
           </div>
 

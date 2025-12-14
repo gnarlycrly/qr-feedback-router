@@ -1,4 +1,3 @@
-import GrayContainer from "../components/GrayContainer";
 import React, { useState, useEffect } from "react";
 import GrayedTextbox from "../components/GrayedTextbox";
 import BlackButton from "../components/BlackButton";
@@ -46,12 +45,7 @@ const BusinessInformation = () => {
     }
   };
   return (
-    <GrayContainer className="max-w-3xl">
-      <h2 className="page-heading">Business Information</h2>
-      <p className="heading-explanation">
-        Update your business details below. These will be displayed to customers on your reward and feedback pages.
-      </p>
-
+    <div className="max-w-3xl">
       <form className="space-y-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
         <GrayedTextbox name = "name"value={formData.name} onChange={handleChange} />
@@ -65,7 +59,7 @@ const BusinessInformation = () => {
         <GrayedTextbox name = "website_url" value={formData.website_url} onChange={handleChange} />
         <BlackButton type="button" label={saving ? "Saving..." : "Save Changes"} onClick={handleSave}  />
       </form>
-    </GrayContainer>
+    </div>
   );
 };
 
