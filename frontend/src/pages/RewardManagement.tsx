@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Gift, Plus } from "lucide-react";
-import StatCard from "../components/StatCard";
+import { /*Gift,*/ Plus } from "lucide-react";
 import GrayContainer from "../components/GrayContainer";
 import BlackButton from "../components/BlackButton";
 import RewardCard from "../components/RewardCard";
@@ -35,12 +34,12 @@ const RewardManagement = () => {
     saveRewards(updated);
   };
 
-  const stats = {
-    activeRewards: rewards.filter((r) => r.active).length,
-    totalRedemptions: 82,
-    redemptionRate: 23,
-    avgRewardValue: "$8.50",
-  };
+  // const stats = {
+  //   activeRewards: rewards.filter((r) => r.active).length,
+  //   totalRedemptions: 82,
+  //   redemptionRate: 23,
+  //   avgRewardValue: "$8.50",
+  // };
 
   return (
     <div>
@@ -52,12 +51,12 @@ const RewardManagement = () => {
         </BlackButton>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="Active Rewards" value={stats.activeRewards} icon={<Gift />} />
         <StatCard label="Total Redemptions" value={stats.totalRedemptions} icon={<Gift />} />
         <StatCard label="Redemption Rate" value={`${stats.redemptionRate}%`} icon={<Gift />} />
         <StatCard label="Avg Reward Value" value={stats.avgRewardValue} icon={<Gift />} />
-      </div>
+      </div> */}
 
       <div className="space-y-4">
         {rewards.map((reward) => (

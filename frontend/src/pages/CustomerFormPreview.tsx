@@ -228,7 +228,7 @@ const CustomerFormPreview = () => {
             Save Changes
           </button>
           <button
-            onClick={() => navigate("/feedback", { state: { next: "/reward" } })}
+            onClick={() => navigate(`/feedback?business=${businessId}`, { state: { next: "/reward" } })}
             className="w-full mt-2 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
             Start Customer Flow

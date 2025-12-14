@@ -49,7 +49,7 @@ const BusinessInformation = () => {
     <GrayContainer className="max-w-3xl">
       <h2 className="page-heading">Business Information</h2>
       <p className="heading-explanation">
-        Update your business details below. These will be displayed to customers on your reward and feedback pages.
+        Update your business details below. These may be displayed to customers on your reward and feedback pages.
       </p>
 
       <form className="space-y-4">

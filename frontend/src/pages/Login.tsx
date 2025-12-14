@@ -21,7 +21,7 @@ export default function Login() {
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       console.log("Logged in:", userCred.user.uid);
-      alert(userCred.user.uid);
+      // alert(userCred.user.uid);
       navigate("/portal", { replace: true });
 
     } catch (err: any) {

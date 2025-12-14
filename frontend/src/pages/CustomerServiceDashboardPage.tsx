@@ -1,36 +1,33 @@
 // Dashboard for customer service teams — shows quick stats, recent reviews and action items.
 import { useEffect, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   ArrowUpRight,
   Calendar,
   Download,
-  Gift,
   MessageCircle,
   Star as StarIcon,
-  Users,
   X,
 } from "lucide-react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date";
 
-type StatTrend = {
-  label: string;
-  colorClass: string;
-};
+// type StatTrend = {
+//   label: string;
+//   colorClass: string;
+// };
 
-type StatCardData = {
-  id: string;
-  title: string;
-  value: string;
-  icon: LucideIcon;
-  iconColorClass: string;
-  rating?: number;
-  trend?: StatTrend;
-};
+// type StatCardData = {
+//   id: string;
+//   title: string;
+//   value: string;
+//   icon: LucideIcon;
+//   iconColorClass: string;
+//   rating?: number;
+//   trend?: StatTrend;
+// };
 
 type ReviewTag = "new" | "reviewed" | "flagged";
 
@@ -261,7 +258,7 @@ function CustomerServiceDashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
+          {/* <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Response Rate</p>
               <div className="flex items-center gap-2">
@@ -283,7 +280,7 @@ function CustomerServiceDashboardPage() {
             <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
               <Gift className="h-6 w-6 text-purple-500" />
             </div>
-          </div>
+          </div> */}
 
         </section>
 

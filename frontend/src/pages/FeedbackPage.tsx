@@ -10,7 +10,7 @@ export default function FeedbackPage() {
 
   // Get businessId from URL query parameter
   const businessId = searchParams.get("business");
-
+  console.log(businessId);
   return (
     <div className="min-h-screen flex items-center justify-center bg-app-gradient px-4 py-8 relative">
       {/* Back button */}
