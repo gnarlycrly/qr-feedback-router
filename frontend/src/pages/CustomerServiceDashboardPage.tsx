@@ -298,15 +298,9 @@ function CustomerServiceDashboardPage() {
       </div>
 
       {isNegativeDrawerOpen && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-black/30 backdrop-blur-sm">
-          <button
-            type="button"
-            aria-label="Close negative reviews overlay"
-            onClick={() => setIsNegativeDrawerOpen(false)}
-            className="flex-1"
-          />
-          <div className="mt-auto space-y-5 rounded-t-3xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between">
+        <div className="fixed inset-0 z-40 flex items-end bg-black/30 backdrop-blur-sm" onClick={() => setIsNegativeDrawerOpen(false)}>
+          <div className="w-full rounded-t-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-shrink-0 flex items-start justify-between p-6 pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-red-500">
                   Flagged Reviews
@@ -321,42 +315,43 @@ function CustomerServiceDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsNegativeDrawerOpen(false)}
-                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 flex-shrink-0"
                 aria-label="Close drawer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
-              {negativeReviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
-                    <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
-                      Flagged
-                    </span>
-                  </div>
-                  <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
-                  <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
-                  <p className="text-xs text-gray-400">{review.timestamp}</p>
-                  <p className="text-xs font-medium text-red-600">Reason: {review.reason}</p>
-                </article>
-              ))}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="space-y-3">
+                {negativeReviews.map((review) => (
+                  <article
+                    key={review.id}
+                    className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
+                      <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                        Flagged
+                      </span>
+                    </div>
+                    <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
+                    <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
+                    <p className="text-xs text-gray-400">{review.timestamp}</p>
+                    <p className="text-xs font-medium text-red-600">Reason: {review.reason}</p>
+                  </article>
+                ))}
+              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex-shrink-0 flex items-center justify-center gap-3 p-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setIsNegativeDrawerOpen(false)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                className="rounded-lg bg-gray-900 px-10 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
               >
-                Close
+                Back to Dashboard
               </button>
-              {/* Log Follow-ups removed (no action implemented) */}
             </div>
           </div>
         </div>
