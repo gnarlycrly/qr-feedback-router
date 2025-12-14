@@ -1,17 +1,11 @@
-import { useState } from "react";
 import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
 
-type Reward = {
-  id: number;
-  title: string;
-  description: string;
-  type: "Percentage Discount" | "Free Item";
-  value: string;
-  created: string;
-  expires: string;
-  active: boolean;
-};
+import { auth } from "../firebaseConfig";
+import { signOut } from "firebase/auth";
+import { type Reward } from "../components/RewardType";
+import { useRewards } from "../firebaseHelpers/useRewards";
+import { useAuth } from "../firebaseHelpers/AuthContext";
 
 type RewardManagementProps = {
   showAddWindow: boolean;
@@ -19,29 +13,33 @@ type RewardManagementProps = {
 };
 
 const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementProps) => {
+  const { businessId } = useAuth();
 
-  // switch to database population eventually
-  const [rewards, setRewards] = useState<Reward[]>([
-    {
-      id: 1,
-      title: "15% Off Next Visit",
-      description: "Valid for your next purchase within 30 days.",
-      type: "Percentage Discount",
-      value: "15%",
-      created: "2025-10-01",
-      expires: "2025-10-31",
-      active: true,
-    },
-  ]);
+  if (!businessId) {
+    return <p>Loading...</p>;
+  }
+
+  const { rewards, setRewards, saveRewards } = useRewards(businessId);
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
-    const reward: Reward = { ...newReward, id: rewards.length + 1, active: true };
-    setRewards([...rewards, reward]);
+    const reward: Reward = {
+      ...newReward,
+      id: rewards.length + 1,
+      active: false,
+    };
+
+    const updated = [...rewards, reward];
+    setRewards(updated);
+    saveRewards(updated);
     setShowAddWindow(false);
   };
 
   const toggleRewardActive = (id: number) => {
-    setRewards(rewards.map((r) => (r.id === id ? { ...r, active: !r.active } : r)));
+    const updated = rewards.map((r) =>
+      r.id === id ? { ...r, active: !r.active } : r
+    );
+    setRewards(updated);
+    saveRewards(updated);
   };
 
   return (
@@ -61,6 +59,10 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
         onClose={() => setShowAddWindow(false)}
         onSubmit={addReward}
       />
+
+      <button onClick={() => signOut(auth)} className="mt-6">
+        Sign Out
+      </button>
     </div>
   );
 };
