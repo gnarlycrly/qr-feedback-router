@@ -1,5 +1,3 @@
-import React from "react";
-
 interface RatingStarsProps {
   value: number;
   onChange: (newValue: number) => void;
