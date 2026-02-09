@@ -1,9 +1,9 @@
-// Simplified Reward page: shows reward directly without authentication
 import { useState, useEffect, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import {type Reward} from "../components/RewardType";
+import { Check, Gift, Copy } from "lucide-react";
+
 type RewardDetails = {
   customerReview: {
     rating: number;
@@ -44,27 +44,28 @@ const RewardLayout = ({
   children: ReactNode;
 }) => {
   return (
-    <div className="flex min-h-screen flex-col bg-app-surface">
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div>
-            <p className="text-lg font-semibold text-gray-800">
-              Absolutely Brilliant
-            </p>
-            <p className="text-xs text-gray-400">
-              {businessName} · Customer Rewards
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-purple-50">
+      <header className="mx-auto max-w-6xl px-6 py-6">
+        <div className="flex items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md px-5 py-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            {/* gradient badge */}
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-400 text-white shadow-sm">
+              AB
+            </div>
+            <div>
+              <p className="text-xl font-semibold tracking-tight text-slate-900">Absolutely Brilliant</p>
+              <p className="text-sm text-slate-500">{businessName} · Customer Rewards</p>
+            </div>
           </div>
+
           <div className="flex items-center gap-3">
-            <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-50 text-green-600">
-              Thank you!
-            </span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Thank you!</span>
           </div>
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-4 py-8">
-        {children}
+      <main className="flex min-h-[60vh] items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">{children}</div>
       </main>
     </div>
   );
@@ -80,172 +81,102 @@ const RewardContent = ({
   rewardData: RewardDetails;
 }) => {
   const renderStars = (rating: number) => (
-    <div
-      className="flex items-center gap-1"
-      aria-label={`Rated ${rating} out of ${ratingScale}`}
-    >
+    <div className="flex items-center gap-2" aria-label={`Rated ${rating} out of ${ratingScale}`}>
       {Array.from({ length: ratingScale }).map((_, index) => (
         <span
           key={index}
           aria-hidden="true"
-          className={`text-lg ${
-            index < rating ? "text-yellow-400" : "text-gray-300"
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+            index < rating ? "bg-yellow-400 text-white" : "bg-gray-200 text-gray-400"
           }`}
         >
           ★
         </span>
       ))}
-      <span className="ml-1 text-sm text-gray-500">
-        ({rating}/{ratingScale})
-      </span>
+      <span className="ml-2 text-sm text-slate-600">({rating}/{ratingScale})</span>
     </div>
   );
 
   return (
-    <article className="w-full max-w-md rounded-3xl bg-white px-6 py-10 shadow-lg sm:px-10">
-      <section className="flex flex-col items-center gap-4 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-          <svg
-            className="h-10 w-10 text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-green-600">Thank You!</h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Your feedback has been submitted successfully.
-          </p>
-        </div>
-      </section>
-
-      {rewardData.customerReview.rating > 0 && (
-        <section className="mt-6 rounded-2xl bg-gray-50 p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-800">Your Review</h3>
-            {renderStars(rewardData.customerReview.rating)}
+    <article className="relative overflow-hidden rounded-3xl bg-white shadow-md">
+      {/* soft tinted header blob */}
+      <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 opacity-70 blur-2xl pointer-events-none" />
+      <div className="p-8">
+        <section className="flex flex-col items-center gap-5 text-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm">
+            <Check className="h-12 w-12 text-emerald-700" strokeWidth={2.5} />
           </div>
-          {rewardData.customerReview.comment && (
-            <p className="mt-2 text-sm italic text-gray-600">
-              &ldquo;{rewardData.customerReview.comment}&rdquo;
-            </p>
-          )}
+
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-900">Thank you!</h2>
+            <p className="mt-2 text-sm text-slate-500">Your feedback has been submitted successfully.</p>
+          </div>
         </section>
-      )}
 
-      <p className="mt-6 text-center text-sm leading-relaxed text-gray-500">
-        We truly appreciate you taking the time to share your experience with{" "}
-        <span className="font-semibold text-gray-700">
-          {rewardData.businessName}
-        </span>
-        . Enjoy this thank-you offer on us!
-      </p>
+        {rewardData.customerReview.rating > 0 && (
+          <section className="mt-8 rounded-2xl bg-slate-50 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Your Review</h3>
+                {rewardData.customerReview.comment && (
+                  <p className="mt-2 max-w-prose text-sm text-slate-600 italic">&ldquo;{rewardData.customerReview.comment}&rdquo;</p>
+                )}
+              </div>
+              {renderStars(rewardData.customerReview.rating)}
+            </div>
+          </section>
+        )}
 
-      <section className="mt-6 rounded-3xl border border-blue-100 bg-blue-50 p-6">
-        <div className="flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <svg
-              className="h-8 w-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <h3 className="text-xl font-bold text-blue-600">
-            {rewardData.reward.title}
-          </h3>
-          <p className="mt-1 text-base text-gray-700">
-            {rewardData.reward.description}
-          </p>
-        </div>
-
-        <div className="mt-5 flex items-center justify-center gap-2">
-          <div className="rounded-xl border border-gray-300 bg-white px-5 py-3">
-            <p className="text-xl font-bold tracking-[0.35em] text-gray-900">
-              {rewardData.reward.promoCode}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onCopy}
-            className="rounded-xl border border-gray-300 bg-white p-3 transition duration-150 hover:bg-gray-50 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-            aria-label={
-              copied ? "Promo code copied to clipboard" : "Copy promo code"
-            }
-          >
-            {copied ? (
-              <svg
-                className="h-5 w-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-            )}
-          </button>
-        </div>
-        <span aria-live="polite" className="sr-only">
-          {copied ? "Promo code copied to clipboard" : ""}
-        </span>
-
-        <p className="mt-3 text-center text-xs text-gray-500">
-          {rewardData.reward.terms}
+        <p className="mt-6 text-center text-sm leading-relaxed text-slate-600">
+          We truly appreciate you taking the time to share your experience with <span className="font-semibold text-slate-800">{rewardData.businessName}</span>. Enjoy this thank-you offer on us!
         </p>
 
-        <div className="mt-5 flex flex-col items-center">
-          <p className="text-center text-xs text-gray-500">
-            Show this code at checkout
-          </p>
-        </div>
-      </section>
+        <section className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 p-6">
+          <div className="flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+              <Gift className="h-8 w-8 text-indigo-600" />
+            </div>
+          </div>
 
-      <footer className="mt-6 space-y-4 text-center">
-        <p className="flex items-center justify-center gap-1 text-sm text-gray-500">
-          We look forward to serving you again soon!
-        </p>
-      </footer>
+          <div className="mt-5 text-center">
+            <h3 className="text-xl font-bold text-indigo-700">{rewardData.reward.title}</h3>
+            <p className="mt-2 text-base text-slate-700">{rewardData.reward.description}</p>
+          </div>
+
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-white px-6 py-3 text-center shadow-sm">
+                <p className="text-lg font-semibold tracking-widest text-slate-900">{rewardData.reward.promoCode}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={onCopy}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow hover:scale-105 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
+                aria-label={copied ? "Promo code copied to clipboard" : "Copy promo code"}
+              >
+                {copied ? (
+                  <Check className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <Copy className="h-5 w-5 text-indigo-600" />
+                )}
+              </button>
+            </div>
+
+            <span aria-live="polite" className="sr-only">{copied ? "Promo code copied to clipboard" : ""}</span>
+
+            <p className="mt-2 text-center text-xs text-slate-500">{rewardData.reward.terms}</p>
+
+            <div className="mt-4">
+              <p className="text-center text-xs text-slate-500">Show this code at checkout</p>
+            </div>
+          </div>
+        </section>
+
+        <footer className="mt-8 text-center">
+          <p className="text-sm text-slate-500">We look forward to serving you again soon!</p>
+        </footer>
+      </div>
     </article>
   );
 };
@@ -253,7 +184,6 @@ const RewardContent = ({
 function RewardPage() {
   const [copied, setCopied] = useState(false);
   const [businessName, setBusinessName] = useState<string>(mockRewardData.businessName);
-  const [rewardInfo,setRewardInfo] = useState<Reward>();
   const location = useLocation();
 
   // Get feedback data and business info from navigation state
@@ -273,14 +203,7 @@ function RewardPage() {
           if (businessDoc.exists()) {
             const data = businessDoc.data();
             setBusinessName(data.name || mockRewardData.businessName);
-            if(data.rewards){
-              for(const rew of data.rewards)
-                if(rew.active){
-                  setRewardInfo(rew);
-                  break;
-                }
-              }
-            }
+          }
         } catch (error) {
           console.error("Error loading business data:", error);
         }
@@ -289,18 +212,13 @@ function RewardPage() {
     loadBusinessData();
   }, [businessId]);
 
-
   const rewardData: RewardDetails = {
     customerReview: {
       rating: feedbackData.rating || mockRewardData.customerReview.rating,
       comment: feedbackData.comment || mockRewardData.customerReview.comment,
     },
     businessName: businessName,
-    reward: {
-      ...mockRewardData.reward,
-      title: rewardInfo?.title ?? mockRewardData.reward.title,
-      description: rewardInfo?.description ?? mockRewardData.reward.description,
-    }
+    reward: mockRewardData.reward,
   };
 
   const handleCopyCode = async () => {

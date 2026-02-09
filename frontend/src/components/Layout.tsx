@@ -28,7 +28,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <span className="text-white font-bold text-sm">AB</span>
             </div>
             <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Absolutely Brilliant
+              Absolutely Brilliant Concepts Inc.
             </span>
           </Link>
           <nav className="flex items-center gap-6">

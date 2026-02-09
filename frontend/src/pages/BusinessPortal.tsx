@@ -1,14 +1,13 @@
 // Business portal: simple tabbed interface for business owners to manage rewards, branding, QR codes and preview.
 import { useState } from "react";
-import { Gift, Building, QrCode, Eye, MessageCircle, Plus } from "lucide-react";
+import { Gift, Building, QrCode, MessageCircle, Plus } from "lucide-react";
 import RewardManagement from "./RewardManagement";
-import BusinessInformation from "./BusinessInformation";
+import BusinessEdit from "./BusinessEdit";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
-import CustomerFormPreview from "./CustomerFormPreview";
 
 const BusinessPortal = () => {
-  const [activeTab, setActiveTab] = useState<"rewards" | "business" | "brand" | "qr" | "preview" | "reviews">("rewards");
+  const [activeTab, setActiveTab] = useState<"rewards" | "business" | "qr" | "reviews">("rewards");
   const [showAddRewardWindow, setShowAddRewardWindow] = useState(false);
 
   return (
@@ -24,9 +23,9 @@ const BusinessPortal = () => {
         
         <div className="space-y-1">
           <NavButton label="Reward Management" icon={<Gift size={18} />} active={activeTab === "rewards"} onClick={() => setActiveTab("rewards")} />
-          <NavButton label="Business Information" icon={<Building size={18} />} active={activeTab === "business"} onClick={() => setActiveTab("business")} />
+          <NavButton label="Edit Info / Customize" icon={<Building size={18} />} active={activeTab === "business"} onClick={() => setActiveTab("business")} />
           <NavButton label="QR Code Generation" icon={<QrCode size={18} />} active={activeTab === "qr"} onClick={() => setActiveTab("qr")} />
-          <NavButton label="Customer View" icon={<Eye size={18} />} active={activeTab === "preview"} onClick={() => setActiveTab("preview")} />
+          {/* Customer View removed — preview now available in Edit Info / Customize */}
           <NavButton label="Review Monitoring" icon={<MessageCircle size={18} />} active={activeTab === "reviews"} onClick={() => setActiveTab("reviews")} />
         </div>
       </aside>
@@ -36,16 +35,14 @@ const BusinessPortal = () => {
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {activeTab === "preview" ? "Customer Form Preview" : 
-               activeTab === "rewards" ? "Reward Management" :
-               activeTab === "business" ? "Business Information" :
+              {activeTab === "rewards" ? "Reward Management" :
+               activeTab === "business" ? "Edit Info / Customize" :
                activeTab === "qr" ? "QR Code Generation" :
                activeTab === "reviews" ? "Review Monitoring" : "Business Portal"}
             </h1>
             <p className="text-gray-600">
-              {activeTab === "preview" ? "Preview and customize your customer feedback form" : 
-               activeTab === "rewards" ? "Create and manage customer rewards" :
-               activeTab === "business" ? "Update your business details" :
+              {activeTab === "rewards" ? "Create and manage customer rewards" :
+               activeTab === "business" ? "Update business details and feedback form customization" :
                activeTab === "qr" ? "Generate QR codes for customers" :
                activeTab === "reviews" ? "Monitor customer feedback and reviews" : "Manage your business settings"}
             </p>
@@ -63,10 +60,10 @@ const BusinessPortal = () => {
           )}
         </div>
 
-        {activeTab === "rewards" && <RewardManagement showAddWindow={showAddRewardWindow} setShowAddWindow={setShowAddRewardWindow} />}
-        {activeTab === "business" && <BusinessInformation />}
+  {activeTab === "rewards" && <RewardManagement showAddWindow={showAddRewardWindow} setShowAddWindow={setShowAddRewardWindow} />}
+  {activeTab === "business" && <BusinessEdit />}
         {activeTab === "qr" && <QRCodeGeneration />}
-        {activeTab === "preview" && <CustomerFormPreview />}
+  {/* CustomerFormPreview removed — preview is available in Edit Info / Customize */}
         {activeTab === "reviews" && <CustomerServiceDashboardPage />}
       </main>
     </div>
