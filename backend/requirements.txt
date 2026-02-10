@@ -3,3 +3,6 @@ flask-cors
 firebase-admin
 python-dotenv
 stripe
+pytest
+pytest-flask
+pytest-mock
