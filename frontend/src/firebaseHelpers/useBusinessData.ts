@@ -16,6 +16,8 @@ interface BusinessData {
   customer_ratingPrompt: string;
   customer_feedbackPrompt: string;
   customer_submitButtonText: string;
+  flaggingThreshold?: number;
+  resolvedReviewIds?: string[];
 }
 
 

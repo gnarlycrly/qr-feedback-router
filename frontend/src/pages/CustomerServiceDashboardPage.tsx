@@ -1,27 +1,36 @@
 // Dashboard for customer service teams — shows quick stats, recent reviews and action items.
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   AlertTriangle,
   Calendar,
+  Check,
   MessageCircle,
   Star as StarIcon,
   X,
 } from "lucide-react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useAuth } from "../firebaseHelpers/AuthContext";
+import { useBusinessData } from "../firebaseHelpers/useBusinessData";
+import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
 import { db } from "../firebaseConfig";
+import InfoTooltip from "../components/InfoTooltip";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date" | "Show all reviews";
 
-type ReviewTag = "new" | "reviewed" | "flagged" | null;
+type ReviewTag = "new" | "reviewed" | "flagged";
 
-type Review = {
-  id: number;
+type RawReview = {
+  docId: string;
   reviewer: string;
   rating: number;
-  tag: ReviewTag | null;
   message: string;
   timestamp: string;
+  isOlderThanWeek: boolean;
+};
+
+type Review = RawReview & {
+  id: number;
+  tag: ReviewTag | null;
 };
 
 type NegativeReview = Review & {
@@ -30,13 +39,9 @@ type NegativeReview = Review & {
 
 const REVIEW_TAG_STYLES: Record<ReviewTag, string> = {
   new: "bg-gray-900 text-white",
-  reviewed: "bg-gray-200 text-gray-800",
+  reviewed: "bg-green-100 text-green-800",
   flagged: "bg-red-500 text-white",
 };
-
-
-
-
 
 const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date", "Show all reviews"];
 
@@ -55,10 +60,10 @@ const getTimePeriodLabel = (range: RangeOption): string => {
 
 const getDateRangeFilter = (range: RangeOption): Date | null => {
   if (range === "Show all reviews") return null;
-  
+
   const now = new Date();
   const result = new Date();
-  
+
   switch (range) {
     case "Last 7 days":
       result.setDate(now.getDate() - 7);
@@ -67,7 +72,6 @@ const getDateRangeFilter = (range: RangeOption): Date | null => {
       result.setDate(now.getDate() - 30);
       break;
     case "Quarter to date":
-      // Calculate start of current quarter
       const currentMonth = now.getMonth();
       const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
       result.setMonth(quarterStartMonth);
@@ -75,7 +79,7 @@ const getDateRangeFilter = (range: RangeOption): Date | null => {
       result.setHours(0, 0, 0, 0);
       break;
   }
-  
+
   return result;
 };
 
@@ -83,11 +87,11 @@ const getTimeAgo = (date: Date): string => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
   const days = Math.floor(hours / 24);
-  return `${days} day${days > 1 ? 's' : ''} ago`;
+  return `${days} day${days > 1 ? "s" : ""} ago`;
 };
 
 const renderStars = (rating: number) => {
@@ -111,10 +115,19 @@ function CustomerServiceDashboardPage() {
   const [selectedRange, setSelectedRange] = useState<RangeOption>("Last 30 days");
   const [isRangeMenuOpen, setIsRangeMenuOpen] = useState(false);
   const [isNegativeDrawerOpen, setIsNegativeDrawerOpen] = useState(false);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [negativeReviews, setNegativeReviews] = useState<NegativeReview[]>([]);
-  const [stats, setStats] = useState({ totalReviews: 0, avgRating: 0, responseRate: 0, rewardsRedeemed: 0 });
+  const [rawReviews, setRawReviews] = useState<RawReview[]>([]);
+  const [threshold, setThreshold] = useState(2);
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
   const { businessId } = useAuth();
+  const { business } = useBusinessData();
+  const updateBusinessData = useUpdateBusinessData();
+
+  // Initialise threshold and resolved IDs from saved business data
+  useEffect(() => {
+    if (!business) return;
+    if (business.flaggingThreshold !== undefined) setThreshold(business.flaggingThreshold);
+    if (business.resolvedReviewIds) setResolvedIds(new Set(business.resolvedReviewIds));
+  }, [business]);
 
   const handleCycleRange = () => {
     const currentIndex = rangeOptions.indexOf(selectedRange);
@@ -128,71 +141,119 @@ function CustomerServiceDashboardPage() {
     setIsRangeMenuOpen(false);
   };
 
+  // Fetch raw review data from Firestore (real-time listener)
   useEffect(() => {
-    const q = query(collection(db, "feedback"), where("businessId", "==", businessId),  orderBy("createdAt", "desc"));
+    if (!businessId) return;
+    const q = query(
+      collection(db, "feedback"),
+      where("businessId", "==", businessId),
+      orderBy("createdAt", "desc"),
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const filterDate = getDateRangeFilter(selectedRange);
-      const allReviews: Review[] = [];
-      const flaggedReviews: NegativeReview[] = [];
-      let totalRating = 0;
-      let rewardsCount = 0;
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      const fetched: RawReview[] = [];
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         const createdAt = data.createdAt?.toDate();
-        
-        // Filter by date range
-        if (filterDate && createdAt && createdAt < filterDate) {
-          return; // Skip reviews outside the selected date range
-        }
-        
-        const timeAgo = createdAt ? getTimeAgo(createdAt) : "Just now";
-        const isOlderThanWeek = createdAt ? (new Date().getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24) > 7 : false;
-        
-        const review: Review = {
-          id: parseInt(doc.id.slice(-6), 36),
+
+        // Filter by date range (null filterDate means show all)
+        if (filterDate && createdAt && createdAt < filterDate) return;
+
+        const isOlderThanWeek = createdAt
+          ? (new Date().getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24) > 7
+          : false;
+
+        fetched.push({
+          docId: docSnap.id,
           reviewer: "Customer",
           rating: data.rating || 0,
-          tag: data.rating <= 2 ? "flagged" : (isOlderThanWeek ? null : "new"),
           message: data.comments || "No comment provided",
-          timestamp: timeAgo,
-        };
-        
-        allReviews.push(review);
-        totalRating += data.rating || 0;
-        
-        if (data.rating >= 4) rewardsCount++;
-        
-        if (data.rating <= 2) {
-          flaggedReviews.push({
-            ...review,
-            reason: "Low rating feedback",
-          });
-        }
+          timestamp: createdAt ? getTimeAgo(createdAt) : "Just now",
+          isOlderThanWeek,
+        });
       });
-      
-      const total = allReviews.length;
-      const avgRating = total > 0 ? totalRating / total : 0;
-      const responseRate = total > 0 ? Math.round((total / (total + negativeReviews.length)) * 100) : 0;
-      
-      setReviews(allReviews);
-      setNegativeReviews(flaggedReviews);
-      setStats({
-        totalReviews: total,
-        avgRating: Math.round(avgRating * 10) / 10,
-        responseRate,
-        rewardsRedeemed: rewardsCount
-      });
+
+      setRawReviews(fetched);
     });
-    
+
     return () => unsubscribe();
-  }, [selectedRange]); // Re-run when selectedRange changes
+  }, [selectedRange, businessId]);
+
+  // Derive displayed reviews — tags react to threshold & resolved changes
+  const reviews: Review[] = useMemo(() => {
+    return rawReviews.map((r) => ({
+      ...r,
+      id: parseInt(r.docId.slice(-6), 36),
+      tag: resolvedIds.has(r.docId)
+        ? ("reviewed" as ReviewTag)
+        : r.rating <= threshold
+          ? ("flagged" as ReviewTag)
+          : r.isOlderThanWeek
+            ? null
+            : ("new" as ReviewTag),
+    }));
+  }, [rawReviews, resolvedIds, threshold]);
+
+  // Aggregate stats (all reviews in the date range, unaffected by resolved status)
+  const stats = useMemo(() => {
+    const total = rawReviews.length;
+    const sum = rawReviews.reduce((acc, r) => acc + r.rating, 0);
+    return {
+      totalReviews: total,
+      avgRating: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
+    };
+  }, [rawReviews]);
+
+  // Unresolved flagged reviews for the Action Items section
+  const unresolvedFlagged: NegativeReview[] = useMemo(() => {
+    return reviews
+      .filter((r) => r.tag === "flagged")
+      .map((r) => ({ ...r, reason: "Low rating feedback" }));
+  }, [reviews]);
+
+  // Persist a new flagging threshold
+  const handleThresholdChange = async (value: number) => {
+    setThreshold(value);
+    try {
+      await updateBusinessData({ flaggingThreshold: value });
+    } catch (err) {
+      console.error("Error saving threshold:", err);
+    }
+  };
+
+  // Mark a single review as resolved
+  const handleResolve = async (docId: string) => {
+    setResolvedIds((prev) => {
+      const next = new Set(prev);
+      next.add(docId);
+      return next;
+    });
+    try {
+      await updateBusinessData({ resolvedReviewIds: arrayUnion(docId) });
+    } catch (err) {
+      console.error("Error resolving review:", err);
+    }
+  };
+
+  // Undo a resolved review
+  const handleUnresolve = async (docId: string) => {
+    setResolvedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(docId);
+      return next;
+    });
+    try {
+      await updateBusinessData({ resolvedReviewIds: arrayRemove(docId) });
+    } catch (err) {
+      console.error("Error unresolving review:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
       <div className="relative mx-auto flex max-w-md flex-col px-5 py-6">
-        {/* header removed: title/subtitle duplicated in Business Portal; content flows directly into stats */}
-
+        {/* Date range selector */}
         <section className="mt-6 flex items-center justify-end gap-3">
           <div className="relative flex-1 max-w-xs">
             <button
@@ -231,10 +292,13 @@ function CustomerServiceDashboardPage() {
           </div>
         </section>
 
+        {/* Stats */}
         <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">{selectedRange === "Show all reviews" ? "Total Reviews" : `Total Reviews in the ${getTimePeriodLabel(selectedRange)}`}</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                {selectedRange === "Show all reviews" ? "Total Reviews" : `Total Reviews in the ${getTimePeriodLabel(selectedRange)}`}
+              </p>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-gray-900">{stats.totalReviews}</span>
               </div>
@@ -256,22 +320,45 @@ function CustomerServiceDashboardPage() {
               <StarIcon className="h-6 w-6 text-yellow-400" />
             </div>
           </div>
-
         </section>
 
+        {/* Action Items */}
         <section className="mt-8 space-y-3">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Action Items</h2>
+            <div className="flex items-center gap-1">
+              <h2 className="text-lg font-semibold text-gray-900">Action Items</h2>
+              <InfoTooltip text="Flagged reviews that need your attention. Mark them as resolved once you've followed up with the customer." />
+            </div>
             <p className="text-sm text-gray-500">Tasks that need your attention</p>
           </div>
 
-          {negativeReviews.length > 0 && (
+          {/* Flagging threshold setting */}
+          <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-3 shadow-sm text-sm">
+            <span className="text-gray-600">Flag reviews rated</span>
+            <select
+              value={threshold}
+              onChange={(e) => handleThresholdChange(Number(e.target.value))}
+              className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm font-semibold text-gray-800 cursor-pointer"
+            >
+              {[1, 2, 3, 4].map((n) => (
+                <option key={n} value={n}>
+                  {n} {n === 1 ? "star" : "stars"}
+                </option>
+              ))}
+            </select>
+            <span className="text-gray-600">or below</span>
+            <InfoTooltip text="Default is 2 stars. Reviews at or below this rating are flagged as action items for follow-up." />
+          </div>
+
+          {unresolvedFlagged.length > 0 && (
             <div className="flex items-center gap-4 rounded-xl bg-red-50 p-4 shadow-sm">
               <span className="text-red-600">
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <div className="flex-1 space-y-1">
-                <p className="text-base font-semibold text-red-700">{negativeReviews.length} Negative Review{negativeReviews.length > 1 ? 's' : ''}</p>
+                <p className="text-base font-semibold text-red-700">
+                  {unresolvedFlagged.length} Negative Review{unresolvedFlagged.length > 1 ? "s" : ""}
+                </p>
                 <p className="text-sm text-red-600">Require immediate response and follow-up</p>
               </div>
               <button
@@ -285,6 +372,7 @@ function CustomerServiceDashboardPage() {
           )}
         </section>
 
+        {/* Customer Reviews */}
         <section className="mt-8 space-y-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Customer Reviews</h2>
@@ -296,30 +384,59 @@ function CustomerServiceDashboardPage() {
               <p className="text-center text-gray-500 py-8">No reviews yet</p>
             ) : (
               reviews.map((review) => (
-              <article key={review.id} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
-                  {review.tag && (
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${REVIEW_TAG_STYLES[review.tag]}`}
-                    >
-                      {review.tag}
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
-                <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
-                <p className="text-xs text-gray-400">{review.timestamp}</p>
-              </article>
-            ))
+                <article key={review.docId} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
+                    {review.tag && (
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${REVIEW_TAG_STYLES[review.tag]}`}
+                      >
+                        {review.tag}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
+                  <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-400">{review.timestamp}</p>
+                    {review.tag === "flagged" && (
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(review.docId)}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                      >
+                        <Check size={13} />
+                        Resolve
+                      </button>
+                    )}
+                    {review.tag === "reviewed" && (
+                      <button
+                        type="button"
+                        onClick={() => handleUnresolve(review.docId)}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 hover:bg-gray-100 transition-colors"
+                      >
+                        <X size={13} />
+                        Unresolve
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))
             )}
           </div>
         </section>
       </div>
 
+      {/* Flagged Reviews Drawer */}
       {isNegativeDrawerOpen && (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/30 backdrop-blur-sm" onClick={() => setIsNegativeDrawerOpen(false)}>
-          <div className="w-full rounded-t-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-black/30 backdrop-blur-sm"
+          onClick={() => setIsNegativeDrawerOpen(false)}
+        >
+          <div
+            className="w-full rounded-t-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex-shrink-0 flex items-start justify-between p-6 pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-red-500">
@@ -344,23 +461,36 @@ function CustomerServiceDashboardPage() {
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="space-y-3">
-                {negativeReviews.map((review) => (
-                  <article
-                    key={review.id}
-                    className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
-                      <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
-                        Flagged
-                      </span>
-                    </div>
-                    <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
-                    <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
-                    <p className="text-xs text-gray-400">{review.timestamp}</p>
-                    <p className="text-xs font-medium text-red-600">Reason: {review.reason}</p>
-                  </article>
-                ))}
+                {unresolvedFlagged.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">All flagged reviews have been resolved.</p>
+                ) : (
+                  unresolvedFlagged.map((review) => (
+                    <article
+                      key={review.docId}
+                      className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
+                        <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                          Flagged
+                        </span>
+                      </div>
+                      <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
+                      <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-400">{review.timestamp}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(review.docId)}
+                          className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                        >
+                          <Check size={13} />
+                          Mark Resolved
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                )}
               </div>
             </div>
 

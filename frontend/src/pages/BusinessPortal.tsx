@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Gift, Building, QrCode, MessageCircle, Plus } from "lucide-react";
 import RewardManagement from "./RewardManagement";
 import BusinessEdit from "./BusinessEdit";
+import InfoTooltip from "../components/InfoTooltip";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
 
@@ -41,10 +42,13 @@ const BusinessPortal = () => {
                activeTab === "reviews" ? "Review Monitoring" : "Business Portal"}
             </h1>
             <p className="text-gray-600">
-              {activeTab === "rewards" ? "Create and manage customer rewards" :
-               activeTab === "business" ? "Update business details and feedback form customization" :
+              {activeTab === "rewards" ? (
+                <>Create and manage customer rewards <InfoTooltip text="Set up promotional rewards for customers who leave feedback. Only one reward can be active at a time." /></>
+              ) : activeTab === "business" ? "Update business details and feedback form customization" :
                activeTab === "qr" ? "Generate QR codes for customers" :
-               activeTab === "reviews" ? "Monitor customer feedback and reviews" : "Manage your business settings"}
+               activeTab === "reviews" ? (
+                <>Monitor customer feedback and reviews <InfoTooltip text="Track incoming reviews in real time. Negative reviews are flagged as action items for follow-up." /></>
+              ) : "Manage your business settings"}
             </p>
           </div>
           
