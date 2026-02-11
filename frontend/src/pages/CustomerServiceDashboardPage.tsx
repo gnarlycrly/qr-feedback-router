@@ -11,15 +11,15 @@ import { collection, query, where, orderBy, onSnapshot } from "firebase/firestor
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { db } from "../firebaseConfig";
 
-type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date";
+type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date" | "Show all reviews";
 
-type ReviewTag = "new" | "reviewed" | "flagged";
+type ReviewTag = "new" | "reviewed" | "flagged" | null;
 
 type Review = {
   id: number;
   reviewer: string;
   rating: number;
-  tag: ReviewTag;
+  tag: ReviewTag | null;
   message: string;
   timestamp: string;
 };
@@ -38,9 +38,24 @@ const REVIEW_TAG_STYLES: Record<ReviewTag, string> = {
 
 
 
-const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date"];
+const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date", "Show all reviews"];
 
-const getDateRangeFilter = (range: RangeOption): Date => {
+const getTimePeriodLabel = (range: RangeOption): string => {
+  switch (range) {
+    case "Last 7 days":
+      return "last 7 days";
+    case "Last 30 days":
+      return "last 30 days";
+    case "Quarter to date":
+      return "quarter to date";
+    case "Show all reviews":
+      return "all time";
+  }
+};
+
+const getDateRangeFilter = (range: RangeOption): Date | null => {
+  if (range === "Show all reviews") return null;
+  
   const now = new Date();
   const result = new Date();
   
@@ -127,17 +142,18 @@ function CustomerServiceDashboardPage() {
         const createdAt = data.createdAt?.toDate();
         
         // Filter by date range
-        if (createdAt && createdAt < filterDate) {
+        if (filterDate && createdAt && createdAt < filterDate) {
           return; // Skip reviews outside the selected date range
         }
         
         const timeAgo = createdAt ? getTimeAgo(createdAt) : "Just now";
+        const isOlderThanWeek = createdAt ? (new Date().getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24) > 7 : false;
         
         const review: Review = {
           id: parseInt(doc.id.slice(-6), 36),
           reviewer: "Customer",
           rating: data.rating || 0,
-          tag: data.rating <= 2 ? "flagged" : "new",
+          tag: data.rating <= 2 ? "flagged" : (isOlderThanWeek ? null : "new"),
           message: data.comments || "No comment provided",
           timestamp: timeAgo,
         };
@@ -155,11 +171,11 @@ function CustomerServiceDashboardPage() {
         }
       });
       
-      const total = snapshot.size;
+      const total = allReviews.length;
       const avgRating = total > 0 ? totalRating / total : 0;
       const responseRate = total > 0 ? Math.round((total / (total + negativeReviews.length)) * 100) : 0;
       
-      setReviews(allReviews.slice(0, 20));
+      setReviews(allReviews);
       setNegativeReviews(flaggedReviews);
       setStats({
         totalReviews: total,
@@ -218,7 +234,7 @@ function CustomerServiceDashboardPage() {
         <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Total Reviews</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">{selectedRange === "Show all reviews" ? "Total Reviews" : `Total Reviews in the ${getTimePeriodLabel(selectedRange)}`}</p>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-gray-900">{stats.totalReviews}</span>
               </div>
@@ -241,35 +257,6 @@ function CustomerServiceDashboardPage() {
             </div>
           </div>
 
-        </section>
-
-        <section className="mt-8 space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Recent Reviews</h2>
-            <p className="text-sm text-gray-500">Latest customer feedback requiring attention</p>
-          </div>
-
-          <div className="space-y-3">
-            {reviews.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No reviews yet</p>
-            ) : (
-              reviews.map((review) => (
-              <article key={review.id} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${REVIEW_TAG_STYLES[review.tag]}`}
-                  >
-                    {review.tag}
-                  </span>
-                </div>
-                <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
-                <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
-                <p className="text-xs text-gray-400">{review.timestamp}</p>
-              </article>
-            ))
-            )}
-          </div>
         </section>
 
         <section className="mt-8 space-y-3">
@@ -296,6 +283,37 @@ function CustomerServiceDashboardPage() {
               </button>
             </div>
           )}
+        </section>
+
+        <section className="mt-8 space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Customer Reviews</h2>
+            <p className="text-sm text-gray-500">Customer feedback requires your attention</p>
+          </div>
+
+          <div className="space-y-3">
+            {reviews.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No reviews yet</p>
+            ) : (
+              reviews.map((review) => (
+              <article key={review.id} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
+                  {review.tag && (
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${REVIEW_TAG_STYLES[review.tag]}`}
+                    >
+                      {review.tag}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
+                <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
+                <p className="text-xs text-gray-400">{review.timestamp}</p>
+              </article>
+            ))
+            )}
+          </div>
         </section>
       </div>
 
