@@ -97,9 +97,9 @@ const QRCodeGeneration = () => {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto min-h-[600px]">
       {/* Business Info */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+      <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-3 mb-2">
           <div>
             <h3 className="font-semibold text-gray-900">
@@ -110,7 +110,7 @@ const QRCodeGeneration = () => {
             )}
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-indigo-200">
+        <div className="mt-3 pt-3 border-t border-amber-300">
           <p className="text-xs text-gray-500 font-mono break-all">
             QR Code URL: {feedbackUrl}
           </p>

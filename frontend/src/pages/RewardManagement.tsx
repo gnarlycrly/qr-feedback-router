@@ -38,7 +38,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   };
 
   return (
-    <div>
+    <div className="max-w-3xl mx-auto min-h-[700px] min-w-[600px] ">
       <div className="space-y-4">
         {rewards.map((reward) => (
           <RewardCard

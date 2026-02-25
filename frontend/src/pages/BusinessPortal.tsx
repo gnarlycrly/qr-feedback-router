@@ -1,62 +1,48 @@
-// Business portal: simple tabbed interface for business owners to manage rewards, branding, QR codes and preview.
 import { useState } from "react";
-import { Gift, Building, QrCode, MessageCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import RewardManagement from "./RewardManagement";
 import BusinessEdit from "./BusinessEdit";
 import InfoTooltip from "../components/InfoTooltip";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
+import BusinessNav from "../components/BusinessNav";
 
 const BusinessPortal = () => {
   const [activeTab, setActiveTab] = useState<"rewards" | "business" | "qr" | "reviews">("rewards");
   const [showAddRewardWindow, setShowAddRewardWindow] = useState(false);
 
   return (
-    <div className="flex min-h-[calc(100vh-200px)] gap-6">
-      {/* Modern Sidebar */}
-      <aside className="w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-2 h-fit sticky top-24">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#f2c125] to-[#ff8c1a] bg-clip-text text-transparent">
-            Business Portal
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your business</p>
-        </div>
-        
-        <div className="space-y-1">
-          <NavButton label="Reward Management" icon={<Gift size={18} />} active={activeTab === "rewards"} onClick={() => setActiveTab("rewards")} />
-          <NavButton label="Edit Info / Customize" icon={<Building size={18} />} active={activeTab === "business"} onClick={() => setActiveTab("business")} />
-          <NavButton label="QR Code Generation" icon={<QrCode size={18} />} active={activeTab === "qr"} onClick={() => setActiveTab("qr")} />
-          {/* Customer View removed — preview now available in Edit Info / Customize */}
-          <NavButton label="Review Monitoring" icon={<MessageCircle size={18} />} active={activeTab === "reviews"} onClick={() => setActiveTab("reviews")} />
-        </div>
-      </aside>
-
-      {/* Modern Content Area */}
-      <main className="flex-1 bg-white rounded-2xl shadow-lg border border-gray-100 p-8 overflow-y-auto">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {activeTab === "rewards" ? "Reward Management" :
-               activeTab === "business" ? "Edit Info / Customize" :
-               activeTab === "qr" ? "QR Code Generation" :
-               activeTab === "reviews" ? "Review Monitoring" : "Business Portal"}
-            </h1>
-            <p className="text-gray-600">
-              {activeTab === "rewards" ? (
-                <>Create and manage customer rewards <InfoTooltip text="Set up promotional rewards for customers who leave feedback. Only one reward can be active at a time." /></>
-              ) : activeTab === "business" ? "Update business details and feedback form customization" :
-               activeTab === "qr" ? "Generate QR codes for customers" :
-               activeTab === "reviews" ? (
-                <>Monitor customer feedback and reviews <InfoTooltip text="Track incoming reviews in real time. Negative reviews are flagged as action items for follow-up." /></>
-              ) : "Manage your business settings"}
-            </p>
+    <div className="max-w-7xl mx-auto">
+      <BusinessNav activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <div>
+        <main className="rounded-2xl shadow-lg border border-gray-100 p-8" style={{ backgroundColor: '#f9e5af' }}>
+        <div className="mb-8">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {activeTab === "rewards" ? "Reward Management" :
+                 activeTab === "business" ? "Edit Info / Customize" :
+                 activeTab === "qr" ? "QR Code Generation" :
+                 activeTab === "reviews" ? "Review Monitoring" : "Business Portal"}
+              </h1>
+              <p className="text-gray-600">
+                {activeTab === "rewards" ? (
+                  <>Create and manage customer rewards <InfoTooltip text="Set up promotional rewards for customers who leave feedback. Only one reward can be active at a time." /></>
+                ) : activeTab === "business" ? "Update business details and feedback form customization" :
+                 activeTab === "qr" ? "Generate QR codes for customers" :
+                 activeTab === "reviews" ? (
+                  <>Monitor customer feedback and reviews <InfoTooltip text="Track incoming reviews in real time. Negative reviews are flagged as action items for follow-up." /></>
+                ) : "Manage your business settings"}
+              </p>
+            </div>
           </div>
           
           {/* Action buttons for specific tabs */}
           {activeTab === "rewards" && (
             <button
               onClick={() => setShowAddRewardWindow(true)}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-[#F2C125] to-[#FF8C1A] text-white font-semibold rounded-lg hover:opacity-90 transition-all"
             >
               <Plus size={18} />
               Create Reward
@@ -70,22 +56,9 @@ const BusinessPortal = () => {
   {/* CustomerFormPreview removed — preview is available in Edit Info / Customize */}
         {activeTab === "reviews" && <CustomerServiceDashboardPage />}
       </main>
+      </div>
     </div>
   );
 };
-
-const NavButton = ({ icon, label, active, onClick }: any) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-      active 
-  ? "bg-gradient-to-r from-[#f2c125] to-[#ff8c1a] text-white shadow-lg shadow-blue-500/30" 
-        : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-    }`}
-  >
-    <span className={active ? "opacity-100" : "opacity-60"}>{icon}</span>
-    <span>{label}</span>
-  </button>
-);
 
 export default BusinessPortal;

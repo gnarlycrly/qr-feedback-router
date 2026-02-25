@@ -251,10 +251,10 @@ function CustomerServiceDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
-      <div className="relative mx-auto flex max-w-md flex-col px-5 py-6">
+    <div className="max-w-3xl mx-auto min-h-[600px]">
+      <div className="flex flex-col space-y-6">
         {/* Date range selector */}
-        <section className="mt-6 flex items-center justify-end gap-3">
+        <section className="flex items-center justify-end gap-3">
           <div className="relative flex-1 max-w-xs">
             <button
               type="button"
@@ -293,7 +293,7 @@ function CustomerServiceDashboardPage() {
         </section>
 
         {/* Stats */}
-        <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
@@ -323,7 +323,7 @@ function CustomerServiceDashboardPage() {
         </section>
 
         {/* Action Items */}
-        <section className="mt-8 space-y-3">
+        <section className="space-y-3">
           <div>
             <div className="flex items-center gap-1">
               <h2 className="text-lg font-semibold text-gray-900">Action Items</h2>
@@ -373,7 +373,7 @@ function CustomerServiceDashboardPage() {
         </section>
 
         {/* Customer Reviews */}
-        <section className="mt-8 space-y-4">
+        <section className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Customer Reviews</h2>
             <p className="text-sm text-gray-500">Customer feedback requires your attention</p>
