@@ -16,7 +16,7 @@ const BusinessPortal = () => {
       {/* Modern Sidebar */}
       <aside className="w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-2 h-fit sticky top-24">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#f2c125] to-[#ff8c1a] bg-clip-text text-transparent">
             Business Portal
           </h1>
           <p className="text-sm text-gray-500 mt-1">Manage your business</p>
@@ -79,7 +79,7 @@ const NavButton = ({ icon, label, active, onClick }: any) => (
     onClick={onClick}
     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
       active 
-        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/30" 
+  ? "bg-gradient-to-r from-[#f2c125] to-[#ff8c1a] text-white shadow-lg shadow-blue-500/30" 
         : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
     }`}
   >

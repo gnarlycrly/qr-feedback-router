@@ -19,21 +19,22 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const isLanding = loc.pathname === "/";
+  const isAuthPage = loc.pathname === "/signup" || loc.pathname === "/login";
   const { user } = useAuth();
 
   return (
-  <div className={isLanding ? "min-h-screen text-app-foreground flex flex-col" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-app-foreground flex flex-col"}>
-      {/* Hide header on the public landing page */}
-      {!isLanding && (
+  <div className={isLanding ? "min-h-screen text-app-foreground flex flex-col" : isAuthPage ? "min-h-screen text-app-foreground flex flex-col" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 text-app-foreground flex flex-col"}>
+      {/* Hide header on the public landing page and auth pages (signup/login) */}
+      {!isLanding && !isAuthPage && (
         <header className="border-b border-gray-200 backdrop-blur-sm bg-white/80 sticky top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             {/* Hide the logo/link when a user is authenticated so there's no way to navigate back to the public landing page */}
             {!user ? (
               <Link to="/" className="flex items-center gap-2 group">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center transform group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f2c125] to-[#ff8c1a] flex items-center justify-center transform group-hover:scale-105 transition-transform">
                   <span className="text-white font-bold text-sm">AB</span>
                 </div>
-                <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="font-bold text-xl bg-gradient-to-r from-[#f2c125] to-[#ff8c1a] bg-clip-text text-transparent">
                   Absolutely Brilliant Concepts Inc.
                 </span>
               </Link>
@@ -55,11 +56,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </header>
       )}
 
-      <main className={isLanding ? "w-full p-0 flex-1" : "max-w-7xl mx-auto px-6 py-12 flex-1"}>
+  <main className={isLanding || isAuthPage ? "w-full p-0 flex-1" : "max-w-7xl mx-auto px-6 py-12 flex-1"}>
         {children}
       </main>
 
-      {!isLanding && (
+      {!isLanding && !isAuthPage && (
         <footer className="border-t border-gray-200 bg-white/50 backdrop-blur-sm mt-auto">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between">

@@ -24,7 +24,7 @@
   --app-surface: #ffffff; /* clean white surfaces */
   --app-border: #e2e8f0; /* subtle borders */
   --app-hover: #f1f5f9; /* hover states */
-  --app-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --app-gradient: linear-gradient(135deg, #f2c125 0%, #ff8c1a 100%);
   --app-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --app-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --app-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -35,6 +35,7 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -83,8 +84,8 @@ body {
 }
 
 .input-modern:focus {
-  border-color: rgb(59 130 246);
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.1);
+  border-color: rgb(255 140 26);
+  box-shadow: 0 0 0 4px rgb(255 140 26 / 0.1);
 }
 
 /* Modern Button Styles */
@@ -93,15 +94,15 @@ body {
   border-radius: 0.75rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(to right, rgb(37 99 235), rgb(59 130 246));
-  box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.3);
+  background: linear-gradient(to right, rgb(242 193 37), rgb(255 140 26));
+  box-shadow: 0 10px 15px -3px rgb(255 140 26 / 0.3);
   transition: all 200ms;
   border: none;
   cursor: pointer;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(to right, rgb(29 78 216), rgb(37 99 235));
+  background: linear-gradient(to right, rgb(227 114 12), rgb(242 193 37));
 }
 
 .btn-primary:active {
@@ -110,7 +111,7 @@ body {
 
 .btn-primary:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.5);
+  box-shadow: 0 0 0 4px rgb(255 140 26 / 0.5);
 }
 
 .btn-secondary {
@@ -181,18 +182,18 @@ body {
 
 /* Legacy button support */
 .btn-app-primary { 
-  background: linear-gradient(to right, rgb(37 99 235), rgb(59 130 246));
+  background: linear-gradient(to right, rgb(242 193 37), rgb(255 140 26));
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.3);
+  box-shadow: 0 10px 15px -3px rgb(255 140 26 / 0.3);
   transition: all 200ms;
   border: none;
 }
 
 .btn-app-primary:hover {
-  background: linear-gradient(to right, rgb(29 78 216), rgb(37 99 235));
+  background: linear-gradient(to right, rgb(227 114 12), rgb(242 193 37));
 }
 
 .btn-app-accent { 
