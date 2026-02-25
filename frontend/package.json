@@ -13,6 +13,7 @@
     "@react-oauth/google": "^0.12.2",
     "firebase": "^12.6.0",
     "lucide-react": "^0.546.0",
+    "ogl": "^1.0.11",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-qr-code": "^2.0.18",

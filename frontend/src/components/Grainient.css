@@ -1,0 +1,15 @@
+.grainient-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* light overlay to improve text contrast */
+.grainient-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.65);
+  mix-blend-mode: normal;
+}
