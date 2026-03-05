@@ -8,7 +8,7 @@ import {
   Star as StarIcon,
   X,
 } from "lucide-react";
-import { collection, query, where, orderBy, onSnapshot, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
@@ -37,11 +37,7 @@ type NegativeReview = Review & {
   reason: string;
 };
 
-const REVIEW_TAG_STYLES: Record<ReviewTag, string> = {
-  new: "bg-gray-900 text-white",
-  reviewed: "bg-green-100 text-green-800",
-  flagged: "bg-red-500 text-white",
-};
+// REVIEW_TAG_STYLES removed — detailed per-review tags are shown on the All Reviews page now.
 
 const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date", "Show all reviews"];
 
@@ -236,59 +232,69 @@ function CustomerServiceDashboardPage() {
     }
   };
 
-  // Undo a resolved review
-  const handleUnresolve = async (docId: string) => {
-    setResolvedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(docId);
-      return next;
-    });
-    try {
-      await updateBusinessData({ resolvedReviewIds: arrayRemove(docId) });
-    } catch (err) {
-      console.error("Error unresolving review:", err);
-    }
-  };
+  // Undo a resolved review — handled from the All Reviews screen if needed.
 
   return (
-    <div className="max-w-3xl mx-auto min-h-[600px]">
-      <div className="flex flex-col space-y-6">
-        {/* Date range selector */}
-        <section className="flex items-center justify-end gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <button
-              type="button"
-              onClick={() => (isRangeMenuOpen ? handleCycleRange() : setIsRangeMenuOpen(true))}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
-            >
-              <Calendar className="h-4 w-4" />
-              {selectedRange}
-            </button>
-            {isRangeMenuOpen && (
-              <div className="absolute right-0 top-full z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
-                <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Choose range
-                </p>
-                <ul className="space-y-1">
-                  {rangeOptions.map((option) => (
-                    <li key={option}>
-                      <button
-                        type="button"
-                        onClick={() => handleSelectRange(option)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                          option === selectedRange
-                            ? "bg-gray-900 text-white"
-                            : "text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        {option}
-                        {option === selectedRange && <span className="text-xs font-medium">Active</span>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+    // Cap the review monitoring tab height and make the inner content scrollable
+    <div className="max-w-3xl mx-auto w-full max-h-[calc(100vh-220px)] flex flex-col">
+      <div className="overflow-auto flex-1 space-y-4">
+        {/* Header + Date range selector */}
+        <section className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Review Monitoring</h1>
+            <p className="text-base text-gray-600">Monitor customer feedback and reviews <InfoTooltip text="Track incoming reviews in real time. Negative reviews are flagged as action items for follow-up." /></p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => (isRangeMenuOpen ? handleCycleRange() : setIsRangeMenuOpen(true))}
+                className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  isRangeMenuOpen
+                    ? "bg-linear-to-r from-[#F2C125] to-[#FF8C1A] text-white hover:opacity-95"
+                    : "bg-white text-black border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <Calendar className="h-4 w-4" />
+                {selectedRange}
+              </button>
+              {isRangeMenuOpen && (
+                <div className="absolute right-0 top-full z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                  <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Choose range
+                  </p>
+                  <ul className="space-y-1">
+                    {rangeOptions.map((option) => (
+                      <li key={option}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRange(option)}
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm ${
+                            option === selectedRange
+                              ? "bg-gray-900 text-white"
+                              : "text-gray-700 hover:bg-linear-to-r hover:from-[#F2C125] hover:to-[#FF8C1A] hover:text-white"
+                          } transition-colors`}
+                        >
+                          {option}
+                          {option === selectedRange && <span className="text-xs font-medium">Active</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => window.location.assign('/portal/reviews')}
+                className="rounded-lg bg-linear-to-r from-[#F2C125] to-[#FF8C1A] px-3 py-2 text-sm font-medium text-white hover:opacity-95 transition"
+              >
+                View Reviews
+              </button>
+            </div>
           </div>
         </section>
 
@@ -372,59 +378,7 @@ function CustomerServiceDashboardPage() {
           )}
         </section>
 
-        {/* Customer Reviews */}
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Customer Reviews</h2>
-            <p className="text-sm text-gray-500">Customer feedback requires your attention</p>
-          </div>
-
-          <div className="space-y-3">
-            {reviews.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No reviews yet</p>
-            ) : (
-              reviews.map((review) => (
-                <article key={review.docId} className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <p className="text-base font-semibold text-gray-900">{review.reviewer}</p>
-                    {review.tag && (
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${REVIEW_TAG_STYLES[review.tag]}`}
-                      >
-                        {review.tag}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
-                  <p className="text-sm leading-relaxed text-gray-600">{review.message}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">{review.timestamp}</p>
-                    {review.tag === "flagged" && (
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(review.docId)}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"
-                      >
-                        <Check size={13} />
-                        Resolve
-                      </button>
-                    )}
-                    {review.tag === "reviewed" && (
-                      <button
-                        type="button"
-                        onClick={() => handleUnresolve(review.docId)}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 hover:bg-gray-100 transition-colors"
-                      >
-                        <X size={13} />
-                        Unresolve
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
+        {/* Customer Reviews moved to separate All Reviews page - list removed from dashboard */}
       </div>
 
       {/* Flagged Reviews Drawer */}
@@ -437,7 +391,7 @@ function CustomerServiceDashboardPage() {
             className="w-full rounded-t-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex-shrink-0 flex items-start justify-between p-6 pb-4 border-b border-gray-200">
+            <div className="shrink-0 flex items-start justify-between p-6 pb-4 border-b border-gray-200">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-red-500">
                   Flagged Reviews
@@ -452,7 +406,7 @@ function CustomerServiceDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsNegativeDrawerOpen(false)}
-                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 flex-shrink-0"
+                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 shrink-0"
                 aria-label="Close drawer"
               >
                 <X className="h-5 w-5" />
@@ -494,7 +448,7 @@ function CustomerServiceDashboardPage() {
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex items-center justify-center gap-3 p-6 pt-4 border-t border-gray-200">
+            <div className="shrink-0 flex items-center justify-center gap-3 p-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setIsNegativeDrawerOpen(false)}

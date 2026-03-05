@@ -19,7 +19,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
     const reward: Reward = {
       ...newReward,
-      id: rewards.length + 1,
+      id: rewards.reduce((max, r) => Math.max(max, r.id), 0) + 1,
       active: false,
     };
 
@@ -30,21 +30,36 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   };
 
   const toggleRewardActive = (id: number) => {
-    const updated = rewards.map((r) =>
-      r.id === id ? { ...r, active: !r.active } : r
-    );
+    // If activating a reward, ensure all others are deactivated so only one is active at a time.
+    const current = rewards.find((r) => r.id === id);
+    const willActivate = current ? !current.active : true;
+
+    const updated = rewards.map((r) => ({
+      ...r,
+      active: willActivate ? r.id === id : r.id === id ? false : r.active,
+    }));
+
+    setRewards(updated);
+    saveRewards(updated);
+  };
+
+  const deleteReward = (id: number) => {
+    const updated = rewards.filter((r) => r.id !== id);
     setRewards(updated);
     saveRewards(updated);
   };
 
   return (
-    <div className="max-w-3xl mx-auto min-h-[700px] min-w-[600px] ">
-      <div className="space-y-4">
+    // Make the rewards tab take up most of the viewport by default and keep
+    // the tab size stable. The list itself will scroll internally.
+    <div className="max-w-3xl mx-auto w-full max-h-[calc(100vh-220px)] flex flex-col">
+      <div className="overflow-auto flex-1 space-y-4 pb-4">
         {rewards.map((reward) => (
           <RewardCard
             key={reward.id}
             reward={reward}
             onToggleActive={toggleRewardActive}
+            onDelete={deleteReward}
           />
         ))}
       </div>

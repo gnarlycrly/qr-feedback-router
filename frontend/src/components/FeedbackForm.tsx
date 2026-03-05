@@ -131,9 +131,9 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         return;
       }
 
-      const target = successPath ?? "/reward?fromFeedback=1&guest=1";
-      // SPA navigation preserves routing state; include location state so RewardPage knows it came from feedback.
-      navigate(target, { state: { fromFeedback: true, feedback: submittedFeedback } });
+  const target = successPath ?? "/reward?fromFeedback=1&guest=1";
+  // SPA navigation preserves routing state; include businessId and feedback so RewardPage can render the real submitted review.
+  navigate(target, { state: { fromFeedback: true, businessId, feedback: submittedFeedback } });
     } catch (error) {
       console.error("Error submitting feedback:", error);
       alert("Failed to submit feedback. Please try again.");
@@ -143,17 +143,17 @@ export default function FeedbackForm({ customization, businessId, successPath, o
   }
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+    <article className="relative overflow-hidden rounded-3xl bg-white shadow-md w-full max-w-md p-8">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
         {/* Header */}
         <div className="text-center pb-4 border-b border-gray-100">
-          <h1 
-            style={{ color: effectiveCustomization?.customer_primaryColor || '#2563eb' }} 
-            className="font-bold text-2xl mb-2"
+          <h1
+            style={{ color: effectiveCustomization?.customer_primaryColor || '#2563eb' }}
+            className="text-3xl font-extrabold mb-2 text-slate-900"
           >
             {effectiveCustomization?.customer_businessName || customization?.customer_businessName || "Sample Business"}
           </h1>
-          <p className="text-gray-600 text-base">
+          <p className="mt-2 text-sm text-slate-500">
             {effectiveCustomization?.customer_headerText || customization?.customer_headerText || "How was your experience?"}
           </p>
         </div>
@@ -200,6 +200,6 @@ export default function FeedbackForm({ customization, businessId, successPath, o
           }
         </button>
       </form>
-    </div>
+    </article>
   );
 }

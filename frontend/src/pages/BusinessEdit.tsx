@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BlackButton from "../components/BlackButton";
 import FeedbackForm from "../components/FeedbackForm";
-import { Eye, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Gift } from "lucide-react";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
@@ -12,6 +12,7 @@ const BusinessEdit: React.FC = () => {
 
   const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
+  
 
   const [form, setForm] = useState({
     // business fields
@@ -30,8 +31,15 @@ const BusinessEdit: React.FC = () => {
     customer_submitButtonText: "Submit Review",
   });
 
+  const STORAGE_PRIMARY = "ab_customer_primaryColor";
+  const STORAGE_ACCENT = "ab_customer_accentColor";
+
   useEffect(() => {
     if (!business || initialized) return;
+    // If the user has previously chosen colors in this browser session, prefer those
+    const storedPrimary = typeof window !== "undefined" ? localStorage.getItem(STORAGE_PRIMARY) : null;
+    const storedAccent = typeof window !== "undefined" ? localStorage.getItem(STORAGE_ACCENT) : null;
+
     setForm((prev) => ({
       ...prev,
       name: business.name || "",
@@ -40,8 +48,9 @@ const BusinessEdit: React.FC = () => {
       email: business.email || "",
       website_url: business.website_url || "",
       customer_businessName: business.customer_businessName || business.name || prev.customer_businessName,
-      customer_primaryColor: business.customer_primaryColor || prev.customer_primaryColor,
-      customer_accentColor: business.customer_accentColor || prev.customer_accentColor,
+      // prefer locally-chosen values so opening this panel doesn't clobber a user's temporary selection
+      customer_primaryColor: storedPrimary || business.customer_primaryColor || prev.customer_primaryColor,
+      customer_accentColor: storedAccent || business.customer_accentColor || prev.customer_accentColor,
       customer_headerText: business.customer_headerText || prev.customer_headerText,
       customer_ratingPrompt: business.customer_ratingPrompt || prev.customer_ratingPrompt,
       customer_feedbackPrompt: business.customer_feedbackPrompt || prev.customer_feedbackPrompt,
@@ -58,6 +67,22 @@ const BusinessEdit: React.FC = () => {
       return;
     }
     setForm((s) => ({ ...s, [name]: value }));
+
+    // Persist temporary brand color choices so reopening the panel doesn't auto-reset them
+    if (name === "customer_primaryColor") {
+      try {
+        localStorage.setItem(STORAGE_PRIMARY, value);
+      } catch (e) {
+        // ignore (e.g., private mode)
+      }
+    }
+    if (name === "customer_accentColor") {
+      try {
+        localStorage.setItem(STORAGE_ACCENT, value);
+      } catch (e) {
+        // ignore
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -79,6 +104,13 @@ const BusinessEdit: React.FC = () => {
         customer_feedbackPrompt: form.customer_feedbackPrompt,
         customer_submitButtonText: form.customer_submitButtonText,
       });
+      // clear any locally-stored temporary color choices since the saved business now holds the source of truth
+      try {
+        localStorage.removeItem(STORAGE_PRIMARY);
+        localStorage.removeItem(STORAGE_ACCENT);
+      } catch (e) {
+        // ignore
+      }
     } catch (err: any) {
       console.error("Error updating business:", err);
       alert(err?.message || "Failed to save business info");
@@ -91,9 +123,12 @@ const BusinessEdit: React.FC = () => {
   // Accordion state: Business Identity collapsed, Brand Styling expanded, Feedback Copy collapsed
   // Accordion state: Business Identity collapsed, Brand Styling expanded, Feedback Copy collapsed
   const [collapsedIdentity, setCollapsedIdentity] = useState(true);
-  const [collapsedBrand, setCollapsedBrand] = useState(false);
+  // default to collapsed so the Brand Styling accordion isn't auto-opened every time
+  const [collapsedBrand, setCollapsedBrand] = useState(true);
   const [collapsedCopy, setCollapsedCopy] = useState(true);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"form" | "thanks">("form");
+  const [submittedFeedbackForPreview, setSubmittedFeedbackForPreview] = useState<{ rating: number; comment: string } | null>(null);
 
   if (loading && !initialized) {
     return <div className="max-w-3xl">Loading...</div>;
@@ -110,6 +145,11 @@ const BusinessEdit: React.FC = () => {
     customer_feedbackPrompt: form.customer_feedbackPrompt,
     customer_submitButtonText: form.customer_submitButtonText,
   };
+  // determine the currently active reward (if any) from the loaded business data
+  const activeReward = (business as any)?.rewards ? (business as any).rewards.find((r: any) => r.active) : null;
+  // preview defaults: if no submitted preview feedback, show a 5-star empty comment preview
+  const previewRating = submittedFeedbackForPreview?.rating ?? 5;
+  const previewComment = submittedFeedbackForPreview?.comment ?? "";
   return (
     <div className="max-w-3xl mx-auto py-8 space-y-6">
       {/* Business Identity section */}
@@ -291,6 +331,11 @@ const BusinessEdit: React.FC = () => {
               customer_submitButtonText: business.customer_submitButtonText || prev.customer_submitButtonText,
             }));
             setInitialized(true);
+            // if user resets, remove any temporary color overrides
+            try {
+              localStorage.removeItem(STORAGE_PRIMARY);
+              localStorage.removeItem(STORAGE_ACCENT);
+            } catch (e) {}
           }
         }} className="btn-secondary">Reset</button>
         </div>
@@ -308,13 +353,21 @@ const BusinessEdit: React.FC = () => {
       {previewVisible && (
         <section className="rounded-lg bg-gray-50 p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3 text-sm text-gray-700">
-              <Eye size={16} />
-              <h3 className="font-medium">Customer Experience Preview</h3>
-            </div>
+            {/* Preview header left-side removed (icon + title) */}
 
-            <div className="inline-flex items-center gap-2 text-sm text-gray-600">
-              <span className="px-2 py-1 rounded-md bg-white border border-gray-100 text-gray-700">Mobile preview</span>
+            <div className="inline-flex items-center gap-2">
+              <button
+                onClick={() => { setPreviewMode("form"); setSubmittedFeedbackForPreview(null); }}
+                className={`px-3 py-1 rounded-md text-sm ${previewMode === "form" ? "bg-white border border-gray-200" : "bg-transparent text-gray-600"}`}
+              >
+                Feedback form
+              </button>
+              <button
+                onClick={() => setPreviewMode("thanks")}
+                className={`px-3 py-1 rounded-md text-sm ${previewMode === "thanks" ? "bg-white border border-gray-200" : "bg-transparent text-gray-600"}`}
+              >
+                Thank you
+              </button>
             </div>
           </div>
 
@@ -322,7 +375,63 @@ const BusinessEdit: React.FC = () => {
             <div style={{ width: 390 }} className="bg-transparent flex items-center justify-center">
               <div className="rounded-2xl bg-white" style={{ width: '100%', border: '1px solid rgba(0,0,0,0.06)', padding: 20 }}>
                 <div className="mx-auto" style={{ maxWidth: 360 }}>
-                  <FeedbackForm customization={customization} businessId={businessId || undefined} />
+                  {previewMode === "form" && (
+                    <FeedbackForm
+                      customization={customization}
+                      businessId={businessId || undefined}
+                      onSuccess={(data) => {
+                        setSubmittedFeedbackForPreview(data);
+                        setPreviewMode("thanks");
+                      }}
+                    />
+                  )}
+
+                  {previewMode === "thanks" && (
+                    <div className="py-4">
+                      <div className="flex flex-col items-center gap-4 text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'linear-gradient(135deg,' + (customization.customer_primaryColor || '#10b981') + ', #e6f9f0)' }}>
+                          <Check className="h-8 w-8 text-white" />
+                        </div>
+                        <div>
+                          <h2 style={{ color: customization.customer_primaryColor }} className="text-2xl font-bold">Thank you!</h2>
+                          <p className="text-gray-700 mt-2 text-sm">Your feedback has been submitted successfully.</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-md bg-gray-50 p-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900">Your Review</h3>
+                            {previewComment && (
+                              <p className="mt-2 max-w-prose text-sm text-gray-600 italic">“{previewComment}”</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span key={i} className={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${i < (previewRating || 0) ? 'bg-yellow-400 text-white' : 'bg-gray-200 text-gray-400'}`}>★</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-center text-sm text-gray-600">We truly appreciate you taking the time to share your experience with <span className="font-semibold text-gray-800">{customization.customer_businessName}</span>. Enjoy this thank-you offer on us!</p>
+
+                      <div className="mt-4 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
+                        <div className="flex justify-center">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+                            <Gift className="h-6 w-6 text-indigo-600" />
+                          </div>
+                        </div>
+
+                        <div className="mt-3 text-center">
+                          <h3 className="text-lg font-bold text-indigo-700">{activeReward ? activeReward.title : 'Special Thank You Offer!'}</h3>
+                          <p className="mt-1 text-sm text-gray-700">{activeReward ? activeReward.description : '20% off your next visit'}</p>
+                        </div>
+                      </div>
+
+                      {/* Back-to-form button removed: toggle at the top provides mode switching */}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <h1 className="text-3xl font-bold mb-4">Absolutely Brilliant</h1>
+  <h1 className="text-3xl font-bold mb-4">Business Portal</h1>
       <p className="mb-6 text-app-muted">Welcome to our frontend prototype!</p>
 
       <div className="flex gap-4">

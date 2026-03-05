@@ -97,7 +97,9 @@ const QRCodeGeneration = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto min-h-[600px]">
+  // Make the QR tab have a capped height so it doesn't push the whole page;
+  // keep the top area (QR + buttons) visible and let the instructions scroll if needed.
+  <div className="max-w-3xl mx-auto w-full max-h-[520px] flex flex-col">
       {/* Business Info */}
       <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -117,8 +119,8 @@ const QRCodeGeneration = () => {
         </div>
       </div>
 
-      {/* QR Code Display */}
-      <div className="flex flex-col items-center space-y-6">
+  {/* QR Code Display */}
+  <div className="flex flex-col items-center space-y-6">
         <div
           ref={qrRef}
           className="bg-white p-8 rounded-lg shadow-lg border-2 border-gray-200"
@@ -144,8 +146,9 @@ const QRCodeGeneration = () => {
           </button>
         </div>
 
-        {/* Instructions */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-lg">
+        {/* Instructions — make this area scrollable if the content is long */}
+        <div className="overflow-auto flex-1 w-full mt-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-lg mx-auto">
           <h4 className="font-semibold text-gray-900 mb-2">How to use:</h4>
           <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
             <li>Download the QR code (PNG for printing, SVG for digital use)</li>
@@ -153,6 +156,7 @@ const QRCodeGeneration = () => {
             <li>Customers scan with their phone camera</li>
             <li>They're redirected to leave feedback and claim their reward</li>
           </ol>
+          </div>
         </div>
       </div>
     </div>

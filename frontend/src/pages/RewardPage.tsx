@@ -13,9 +13,9 @@ type RewardDetails = {
   reward: {
     title: string;
     description: string;
-    promoCode: string;
-    validityDays: number;
-    terms: string;
+    promoCode?: string;
+    validityDays?: number;
+    terms?: string;
   };
 };
 
@@ -39,30 +39,30 @@ const mockRewardData: RewardDetails = {
 const RewardLayout = ({
   businessName,
   children,
+  showHeader = true,
 }: {
   businessName: string;
   children: ReactNode;
+  showHeader?: boolean;
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-purple-50">
-      <header className="mx-auto max-w-6xl px-6 py-6">
-        <div className="flex items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md px-5 py-4 shadow-sm">
-          <div className="flex items-center gap-4">
-            {/* gradient badge */}
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-400 text-white shadow-sm">
-              AB
+  <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-purple-50">
+      {showHeader && (
+        <header className="mx-auto max-w-6xl px-6 py-6">
+          <div className="flex items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md px-5 py-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="text-xl font-semibold tracking-tight text-slate-900">Business Portal</p>
+                <p className="text-sm text-slate-500">{businessName} · Customer Rewards</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xl font-semibold tracking-tight text-slate-900">Absolutely Brilliant</p>
-              <p className="text-sm text-slate-500">{businessName} · Customer Rewards</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Thank you!</span>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Thank you!</span>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="flex min-h-[60vh] items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">{children}</div>
@@ -75,10 +75,12 @@ const RewardContent = ({
   copied,
   onCopy,
   rewardData,
+  primaryColor,
 }: {
   copied: boolean;
   onCopy: () => Promise<void>;
   rewardData: RewardDetails;
+  primaryColor?: string;
 }) => {
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-2" aria-label={`Rated ${rating} out of ${ratingScale}`}>
@@ -100,7 +102,7 @@ const RewardContent = ({
   return (
     <article className="relative overflow-hidden rounded-3xl bg-white shadow-md">
       {/* soft tinted header blob */}
-      <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 opacity-70 blur-2xl pointer-events-none" />
+  <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 opacity-70 blur-2xl pointer-events-none" />
       <div className="p-8">
         <section className="flex flex-col items-center gap-5 text-center">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm">
@@ -108,7 +110,7 @@ const RewardContent = ({
           </div>
 
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">Thank you!</h2>
+            <h2 style={{ color: primaryColor || '#10b981' }} className="text-3xl font-extrabold">Thank you!</h2>
             <p className="mt-2 text-sm text-slate-500">Your feedback has been submitted successfully.</p>
           </div>
         </section>
@@ -131,7 +133,7 @@ const RewardContent = ({
           We truly appreciate you taking the time to share your experience with <span className="font-semibold text-slate-800">{rewardData.businessName}</span>. Enjoy this thank-you offer on us!
         </p>
 
-        <section className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 p-6">
+  <section className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 p-6">
           <div className="flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
               <Gift className="h-8 w-8 text-indigo-600" />
@@ -143,34 +145,36 @@ const RewardContent = ({
             <p className="mt-2 text-base text-slate-700">{rewardData.reward.description}</p>
           </div>
 
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-white px-6 py-3 text-center shadow-sm">
-                <p className="text-lg font-semibold tracking-widest text-slate-900">{rewardData.reward.promoCode}</p>
+          {rewardData.reward.promoCode ? (
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-white px-6 py-3 text-center shadow-sm">
+                  <p className="text-lg font-semibold tracking-widest text-slate-900">{rewardData.reward.promoCode}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow hover:scale-105 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
+                  aria-label={copied ? "Promo code copied to clipboard" : "Copy promo code"}
+                >
+                  {copied ? (
+                    <Check className="h-5 w-5 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-5 w-5 text-indigo-600" />
+                  )}
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={onCopy}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow hover:scale-105 active:scale-95 transition-transform duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
-                aria-label={copied ? "Promo code copied to clipboard" : "Copy promo code"}
-              >
-                {copied ? (
-                  <Check className="h-5 w-5 text-emerald-600" />
-                ) : (
-                  <Copy className="h-5 w-5 text-indigo-600" />
-                )}
-              </button>
+              <span aria-live="polite" className="sr-only">{copied ? "Promo code copied to clipboard" : ""}</span>
+
+              <p className="mt-2 text-center text-xs text-slate-500">{rewardData.reward.terms}</p>
+
+              <div className="mt-4">
+                <p className="text-center text-xs text-slate-500">Show this code at checkout</p>
+              </div>
             </div>
-
-            <span aria-live="polite" className="sr-only">{copied ? "Promo code copied to clipboard" : ""}</span>
-
-            <p className="mt-2 text-center text-xs text-slate-500">{rewardData.reward.terms}</p>
-
-            <div className="mt-4">
-              <p className="text-center text-xs text-slate-500">Show this code at checkout</p>
-            </div>
-          </div>
+          ) : null}
         </section>
 
         <footer className="mt-8 text-center">
@@ -184,12 +188,18 @@ const RewardContent = ({
 function RewardPage() {
   const [copied, setCopied] = useState(false);
   const [businessName, setBusinessName] = useState<string>(mockRewardData.businessName);
+  const [activeReward, setActiveReward] = useState<any | null>(null);
+  const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
   const location = useLocation();
 
+  const search = new URLSearchParams(location.search);
+  const isCustomer = search.get("guest") === "1" || search.get("fromFeedback") === "1" || ((location.state as any)?.fromFeedback ?? false);
+
   // Get feedback data and business info from navigation state
+  // If no feedback.comment was provided, keep comment empty (do not show a default example comment)
   const feedbackData = (location.state as any)?.feedback || {
     rating: mockRewardData.customerReview.rating,
-    comment: mockRewardData.customerReview.comment,
+    comment: "",
   };
 
   const businessId = (location.state as any)?.businessId;
@@ -203,6 +213,12 @@ function RewardPage() {
           if (businessDoc.exists()) {
             const data = businessDoc.data();
             setBusinessName(data.name || mockRewardData.businessName);
+            setPrimaryColor((data as any).customer_primaryColor || undefined);
+            // If the business has a rewards array, prefer the active one
+            if (Array.isArray((data as any).rewards)) {
+              const active = ((data as any).rewards as any[]).find((r) => r.active);
+              if (active) setActiveReward(active);
+            }
           }
         } catch (error) {
           console.error("Error loading business data:", error);
@@ -214,16 +230,23 @@ function RewardPage() {
 
   const rewardData: RewardDetails = {
     customerReview: {
-      rating: feedbackData.rating || mockRewardData.customerReview.rating,
-      comment: feedbackData.comment || mockRewardData.customerReview.comment,
+      rating: feedbackData.rating ?? mockRewardData.customerReview.rating,
+      comment: feedbackData.comment ?? "",
     },
     businessName: businessName,
-    reward: mockRewardData.reward,
+    reward: activeReward
+      ? {
+          title: activeReward.title || mockRewardData.reward.title,
+          description: activeReward.description || mockRewardData.reward.description,
+        }
+      : mockRewardData.reward,
   };
 
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(rewardData.reward.promoCode);
+      const code = rewardData.reward.promoCode;
+      if (!code) return;
+      await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -232,8 +255,8 @@ function RewardPage() {
   };
 
   return (
-    <RewardLayout businessName={rewardData.businessName}>
-      <RewardContent copied={copied} onCopy={handleCopyCode} rewardData={rewardData} />
+    <RewardLayout businessName={rewardData.businessName} showHeader={!isCustomer}>
+      <RewardContent copied={copied} onCopy={handleCopyCode} rewardData={rewardData} primaryColor={primaryColor} />
     </RewardLayout>
   );
 }

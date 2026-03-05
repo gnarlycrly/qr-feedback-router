@@ -6,6 +6,7 @@ import Dashboard from "./pages/CustomerServiceDashboardPage";
 import RewardPage from "./pages/RewardPage";
 import FeedbackPage from "./pages/FeedbackPage";
 import BusinessPortal from "./pages/BusinessPortal";
+import AllReviewsPage from "./pages/AllReviewsPage";
 import Layout from "./components/Layout";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { AuthProvider } from "./firebaseHelpers/AuthContext";
@@ -25,6 +26,7 @@ function App() {
             <Route path="/reward" element={<RewardPage />} />
             <Route path="/feedback" element={<FeedbackPage />} /> 
             <Route path="/portal" element={<ProtectedRoute><BusinessPortal/></ProtectedRoute>} />
+            <Route path="/portal/reviews" element={<ProtectedRoute><AllReviewsPage/></ProtectedRoute>} />
           </Routes>
         </Layout>
       </AuthProvider>

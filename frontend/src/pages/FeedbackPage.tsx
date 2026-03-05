@@ -13,7 +13,7 @@ export default function FeedbackPage() {
   const businessId = searchParams.get("business");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50/30 to-blue-50 px-4 py-12 relative">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-purple-50 px-4 py-12 relative">
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}

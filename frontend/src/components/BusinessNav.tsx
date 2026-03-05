@@ -9,8 +9,8 @@ type BusinessNavProps = {
 
 const BusinessNav = ({ activeTab, onTabChange }: BusinessNavProps) => {
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm mb-6">
-      <div className="max-w-7xl mx-auto flex items-center justify-center gap-1 px-4">
+    <nav className="mb-6 flex justify-center">
+      <div className="w-full max-w-3xl flex items-center justify-center gap-1 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-2xl">
         <NavButton
           label="Rewards"
           icon={<Gift size={18} />}
