@@ -1,6 +1,6 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { Check, Gift, Copy } from "lucide-react";
 
@@ -46,19 +46,19 @@ const RewardLayout = ({
   showHeader?: boolean;
 }) => {
   return (
-  <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-purple-50">
+  <div className="min-h-dvh bg-gradient-to-b from-indigo-50 to-purple-50">
       {showHeader && (
-        <header className="mx-auto max-w-6xl px-6 py-6">
-          <div className="flex items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md px-5 py-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-xl font-semibold tracking-tight text-slate-900">Business Portal</p>
-                <p className="text-sm text-slate-500">{businessName} · Customer Rewards</p>
+        <header className="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 shadow-sm min-w-0">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="min-w-0">
+                <p className="text-base sm:text-xl font-semibold tracking-tight text-slate-900 truncate">Business Portal</p>
+                <p className="text-xs sm:text-sm text-slate-500 truncate">{businessName} · Customer Rewards</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Thank you!</span>
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <span className="rounded-full bg-emerald-100 px-2 sm:px-3 py-1 text-xs font-medium text-emerald-700">Thank you!</span>
             </div>
           </div>
         </header>
@@ -103,7 +103,7 @@ const RewardContent = ({
     <article className="relative overflow-hidden rounded-3xl bg-white shadow-md">
       {/* soft tinted header blob */}
   <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 opacity-70 blur-2xl pointer-events-none" />
-      <div className="p-8">
+      <div className="p-5 sm:p-8">
         <section className="flex flex-col items-center gap-5 text-center">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm">
             <Check className="h-12 w-12 text-emerald-700" strokeWidth={2.5} />
@@ -117,7 +117,7 @@ const RewardContent = ({
 
         {rewardData.customerReview.rating > 0 && (
           <section className="mt-8 rounded-2xl bg-slate-50 p-4">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">Your Review</h3>
                 {rewardData.customerReview.comment && (
@@ -188,8 +188,9 @@ const RewardContent = ({
 function RewardPage() {
   const [copied, setCopied] = useState(false);
   const [businessName, setBusinessName] = useState<string>(mockRewardData.businessName);
-  const [activeReward, setActiveReward] = useState<any | null>(null);
+  const [liveReward, setLiveReward] = useState<RewardDetails["reward"] | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
+  const hasIncrementedRef = useRef(false);
   const location = useLocation();
 
   const search = new URLSearchParams(location.search);
@@ -214,10 +215,32 @@ function RewardPage() {
             const data = businessDoc.data();
             setBusinessName(data.name || mockRewardData.businessName);
             setPrimaryColor((data as any).customer_primaryColor || undefined);
-            // If the business has a rewards array, prefer the active one
-            if (Array.isArray((data as any).rewards)) {
-              const active = ((data as any).rewards as any[]).find((r) => r.active);
-              if (active) setActiveReward(active);
+
+            // Find an active reward that hasn't exceeded max redemptions
+            const rewards: any[] = data.rewards || [];
+            const activeReward = rewards.find(
+              (r: any) => r.active && (r.maxRedemptions === 0 || (r.currentRedemptions ?? 0) < r.maxRedemptions)
+            );
+
+            if (activeReward) {
+              setLiveReward({
+                title: activeReward.title,
+                description: activeReward.value || activeReward.description,
+                promoCode: activeReward.promoCode,
+                validityDays: 30,
+                terms: `Valid for 30 days. Max ${activeReward.maxRedemptions} redemptions.`,
+              });
+
+              // Increment redemption count once per page load
+              if (!hasIncrementedRef.current) {
+                hasIncrementedRef.current = true;
+                const idx = rewards.indexOf(activeReward);
+                if (idx !== -1) {
+                  const updated = [...rewards];
+                  updated[idx] = { ...activeReward, currentRedemptions: (activeReward.currentRedemptions ?? 0) + 1 };
+                  updateDoc(doc(db, "businesses", businessId), { rewards: updated }).catch(console.error);
+                }
+              }
             }
           }
         } catch (error) {
@@ -234,12 +257,7 @@ function RewardPage() {
       comment: feedbackData.comment ?? "",
     },
     businessName: businessName,
-    reward: activeReward
-      ? {
-          title: activeReward.title || mockRewardData.reward.title,
-          description: activeReward.description || mockRewardData.reward.description,
-        }
-      : mockRewardData.reward,
+    reward: liveReward ?? mockRewardData.reward,
   };
 
   const handleCopyCode = async () => {

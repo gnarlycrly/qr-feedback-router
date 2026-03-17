@@ -143,7 +143,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
   }
 
   return (
-    <article className="relative overflow-hidden rounded-3xl bg-white shadow-md w-full max-w-md p-8">
+    <article className="relative overflow-hidden rounded-3xl bg-white shadow-md w-full max-w-md p-5 sm:p-8">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
         {/* Header */}
         <div className="text-center pb-4 border-b border-gray-100">

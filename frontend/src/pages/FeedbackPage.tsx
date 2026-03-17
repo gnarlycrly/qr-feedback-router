@@ -13,22 +13,26 @@ export default function FeedbackPage() {
   const businessId = searchParams.get("business");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-purple-50 px-4 py-12 relative">
-      {/* Back button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-6 left-6 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-4 py-2 rounded-lg hover:bg-white/80"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </button>
+    <div className="min-h-dvh bg-gradient-to-br from-blue-50 via-purple-50/30 to-blue-50 flex flex-col">
+      {/* Back button – in normal document flow so it doesn't overlap content on small screens */}
+      <div className="flex-shrink-0 px-4 pt-4 pb-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-white/80 -ml-1"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+      </div>
 
-      <FeedbackForm
-        businessId={businessId || undefined}
-        onSuccess={(feedbackData) => navigate(`${next}?fromFeedback=1&guest=1&business=${businessId || ''}`, {
-          state: { fromFeedback: true, businessId, feedback: feedbackData }
-        })}
-      />
+      <div className="flex-1 flex justify-center items-start px-4 py-4 pb-10">
+        <FeedbackForm
+          businessId={businessId || undefined}
+          onSuccess={(feedbackData) => navigate(`${next}?fromFeedback=1&guest=1&business=${businessId || ''}`, {
+            state: { fromFeedback: true, businessId, feedback: feedbackData }
+          })}
+        />
+      </div>
     </div>
   );
 }
