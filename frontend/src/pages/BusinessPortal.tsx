@@ -7,6 +7,9 @@ import InfoTooltip from "../components/InfoTooltip";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
 import BusinessNav from "../components/BusinessNav";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import { useRewards } from "../firebaseHelpers/useRewards";
+import { useAuth } from "../firebaseHelpers/AuthContext";
 
 const BusinessPortal = () => {
   const location = useLocation();
@@ -26,6 +29,10 @@ const BusinessPortal = () => {
 
   const [activeTab, setActiveTab] = useState<"rewards" | "business" | "qr" | "reviews">(getInitialTab());
   const [showAddRewardWindow, setShowAddRewardWindow] = useState(false);
+  const { isPro } = useSubscription();
+  const { businessId } = useAuth();
+  const { rewards } = useRewards(businessId);
+  const canAddReward = isPro || rewards.length < 1;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -54,7 +61,7 @@ const BusinessPortal = () => {
                 )}
               </div>
 
-              {activeTab === "rewards" && (
+              {activeTab === "rewards" && canAddReward && (
                 <div className="flex-shrink-0">
                   <button
                     onClick={() => setShowAddRewardWindow(true)}

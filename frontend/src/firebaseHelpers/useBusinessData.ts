@@ -3,6 +3,15 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useAuth } from "./AuthContext"; 
 
+interface SubscriptionData {
+  status: "free" | "active" | "past_due" | "canceled" | "trialing";
+  plan: "free" | "pro";
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  currentPeriodEnd: number | null;
+  cancelAtPeriodEnd: boolean;
+}
+
 interface BusinessData {
   name: string;
   address: string;
@@ -18,6 +27,7 @@ interface BusinessData {
   customer_submitButtonText: string;
   flaggingThreshold?: number;
   resolvedReviewIds?: string[];
+  subscription?: SubscriptionData;
 }
 
 

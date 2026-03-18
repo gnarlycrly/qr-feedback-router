@@ -10,7 +10,6 @@ export default function Signup() {
   const navigate = useNavigate();
   const next = "/portal";
 
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [businessAddress, setBusinessAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -67,6 +66,14 @@ export default function Signup() {
         customer_ratingPrompt: "Rate your experience",
         customer_feedbackPrompt: "Tell us more about your experience (optional)",
         customer_submitButtonText: "Submit Review",
+        subscription: {
+          status: "free",
+          plan: "free",
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+        },
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });

@@ -3,12 +3,17 @@ import QRCode from "react-qr-code";
 import BlackButton from "../components/BlackButton";
 import { auth } from "../firebaseConfig";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
-import {useAuth} from "../firebaseHelpers/AuthContext";
+import { useAuth } from "../firebaseHelpers/AuthContext";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import { Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const QRCodeGeneration = () => {
   const qrRef = useRef<HTMLDivElement>(null);
   const currentUser = auth.currentUser;
   const { business, loading } = useBusinessData();
+  const { isPro } = useSubscription();
+  const navigate = useNavigate();
 
   // Generate the feedback URL with business ID (user's UID)
   const { businessId } = useAuth();
@@ -138,12 +143,22 @@ const QRCodeGeneration = () => {
             label="Download PNG"
             onClick={handleDownloadPNG}
           />
-          <button
-            onClick={handleDownloadSVG}
-            className="px-6 py-2 bg-white border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Download SVG
-          </button>
+          {isPro ? (
+            <button
+              onClick={handleDownloadSVG}
+              className="px-6 py-2 bg-white border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Download SVG
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/pricing")}
+              className="flex items-center gap-2 px-6 py-2 bg-gray-100 border-2 border-gray-200 text-gray-400 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Lock size={14} />
+              SVG (Pro)
+            </button>
+          )}
         </div>
 
         {/* Instructions — make this area scrollable if the content is long */}

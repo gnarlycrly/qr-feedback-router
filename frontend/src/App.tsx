@@ -7,6 +7,9 @@ import RewardPage from "./pages/RewardPage";
 import FeedbackPage from "./pages/FeedbackPage";
 import BusinessPortal from "./pages/BusinessPortal";
 import AllReviewsPage from "./pages/AllReviewsPage";
+import PricingPage from "./pages/PricingPage";
+import SubscriptionSuccessPage from "./pages/SubscriptionSuccessPage";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
 import Layout from "./components/Layout";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { AuthProvider } from "./firebaseHelpers/AuthContext";
@@ -24,9 +27,12 @@ function App() {
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard/></ProtectedRoute>} />
             <Route path="/reward" element={<RewardPage />} />
-            <Route path="/feedback" element={<FeedbackPage />} /> 
+            <Route path="/feedback" element={<FeedbackPage />} />
             <Route path="/portal" element={<ProtectedRoute><BusinessPortal/></ProtectedRoute>} />
             <Route path="/portal/reviews" element={<ProtectedRoute><AllReviewsPage/></ProtectedRoute>} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
           </Routes>
         </Layout>
       </AuthProvider>

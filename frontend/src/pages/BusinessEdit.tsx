@@ -5,10 +5,13 @@ import { ChevronDown, ChevronRight, Check, Gift } from "lucide-react";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import SubscriptionGate from "../components/SubscriptionGate";
 
 const BusinessEdit: React.FC = () => {
   const { business, loading } = useBusinessData();
   const updateBusinessData = useUpdateBusinessData();
+  const { isPro } = useSubscription();
 
   const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -240,12 +243,19 @@ const BusinessEdit: React.FC = () => {
                     <input name="customer_primaryColor" value={form.customer_primaryColor} onChange={handleChange} className="w-36 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-700" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-700">Accent Color</label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <input type="color" name="customer_accentColor" value={form.customer_accentColor} onChange={handleChange} className="h-9 w-12 p-0 border-0 rounded" />
-                    <input name="customer_accentColor" value={form.customer_accentColor} onChange={handleChange} className="w-36 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-700" />
-                  </div>
+                <div className="relative">
+                  <label className="block text-sm text-gray-700">Accent Color {!isPro && <span className="text-xs text-gray-400">(Pro)</span>}</label>
+                  {isPro ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input type="color" name="customer_accentColor" value={form.customer_accentColor} onChange={handleChange} className="h-9 w-12 p-0 border-0 rounded" />
+                      <input name="customer_accentColor" value={form.customer_accentColor} onChange={handleChange} className="w-36 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-700" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-2 opacity-50 pointer-events-none">
+                      <input type="color" value={form.customer_accentColor} disabled className="h-9 w-12 p-0 border-0 rounded" />
+                      <input value={form.customer_accentColor} disabled className="w-36 rounded-md border border-gray-200 px-2 py-1 text-sm text-gray-400 bg-gray-50" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -254,6 +264,7 @@ const BusinessEdit: React.FC = () => {
       </section>
 
       {/* Feedback Copy */}
+      <SubscriptionGate feature="Feedback Copy Customization" mode={isPro ? "blur" : "blur"}>
     <section className="bg-white rounded-md">
         <div className={`w-full flex items-center h-14 px-4 transition-colors duration-150 rounded-md ${collapsedCopy ? 'hover:bg-gray-50' : 'bg-gray-50'}`}>
           <div className="mr-4">
@@ -271,7 +282,7 @@ const BusinessEdit: React.FC = () => {
             aria-expanded={!collapsedCopy}
           >
             <div className="flex-1">
-              <div className="text-lg font-semibold text-gray-800 leading-tight">Feedback Copy</div>
+              <div className="text-lg font-semibold text-gray-800 leading-tight">Feedback Copy {!isPro && <span className="text-xs text-gray-400">(Pro)</span>}</div>
               <div className="text-sm text-gray-500">Text shown to customers during the feedback flow</div>
             </div>
             <span className="text-gray-400 ml-3 opacity-80">
@@ -305,6 +316,7 @@ const BusinessEdit: React.FC = () => {
           </div>
         )}
       </section>
+      </SubscriptionGate>
 
       {/* (Behavior & Toggles removed to reduce visual clutter) */}
 
@@ -342,10 +354,17 @@ const BusinessEdit: React.FC = () => {
 
         {/* Preview toggle (collapsed by default) */}
         <div>
-          <label className="inline-flex items-center gap-3">
-            <input type="checkbox" className="form-checkbox" checked={previewVisible} onChange={(e) => setPreviewVisible(e.target.checked)} />
-            <span className="text-sm text-gray-700">Preview customer experience</span>
-          </label>
+          {isPro ? (
+            <label className="inline-flex items-center gap-3">
+              <input type="checkbox" className="form-checkbox" checked={previewVisible} onChange={(e) => setPreviewVisible(e.target.checked)} />
+              <span className="text-sm text-gray-700">Preview customer experience</span>
+            </label>
+          ) : (
+            <label className="inline-flex items-center gap-3 opacity-50 cursor-not-allowed">
+              <input type="checkbox" className="form-checkbox" disabled />
+              <span className="text-sm text-gray-700">Preview customer experience <span className="text-xs text-gray-400">(Pro)</span></span>
+            </label>
+          )}
         </div>
       </div>
 

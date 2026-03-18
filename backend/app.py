@@ -7,10 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[os.getenv("FRONTEND_URL", "http://localhost:5173")])
 cred = credentials.Certificate(os.getenv("FIREBASE_KEY_PATH"))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+# Register Stripe blueprint
+from stripe_routes import stripe_bp
+app.register_blueprint(stripe_bp)
 
 @app.route("/")
 def index():

@@ -98,6 +98,15 @@ const Landing: React.FC = () => {
             </button>
           </div>
 
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate("/pricing")}
+              className="text-white/90 hover:text-white text-base sm:text-lg font-medium underline underline-offset-4 transition-colors"
+            >
+              View Pricing
+            </button>
+          </div>
+
           <p className="mt-8 text-base sm:text-lg text-white/80 text-center">By Absolutely Brilliant Concepts Inc.</p>
         </section>
       </main>

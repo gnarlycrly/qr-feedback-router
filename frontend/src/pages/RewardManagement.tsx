@@ -1,11 +1,11 @@
 import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
 
-// import { auth } from "../firebaseConfig";
-// import { signOut } from "firebase/auth";
 import { type Reward } from "../components/RewardType";
 import { useRewards } from "../firebaseHelpers/useRewards";
 import { useAuth } from "../firebaseHelpers/AuthContext";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import UpgradeBanner from "../components/UpgradeBanner";
 
 type RewardManagementProps = {
   showAddWindow: boolean;
@@ -15,6 +15,8 @@ type RewardManagementProps = {
 const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementProps) => {
   const { businessId } = useAuth();
   const { rewards, setRewards, saveRewards } = useRewards(businessId);
+  const { isPro } = useSubscription();
+  const canAddReward = isPro || rewards.length < 1;
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
     const reward: Reward = {
@@ -64,15 +66,15 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
         ))}
       </div>
 
+      {!canAddReward && (
+        <UpgradeBanner feature="Unlimited Rewards" />
+      )}
+
       <RewardAddWindow
-        isOpen={showAddWindow}
+        isOpen={showAddWindow && canAddReward}
         onClose={() => setShowAddWindow(false)}
         onSubmit={addReward}
       />
-
-      {/* <button onClick={() => signOut(auth)} className="mt-6">
-        Sign Out
-      </button> */}
     </div>
   );
 };

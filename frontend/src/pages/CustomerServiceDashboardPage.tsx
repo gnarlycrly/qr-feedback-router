@@ -14,6 +14,8 @@ import { useBusinessData } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
 import { db } from "../firebaseConfig";
 import InfoTooltip from "../components/InfoTooltip";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import UpgradeBanner from "../components/UpgradeBanner";
 
 type RangeOption = "Last 7 days" | "Last 30 days" | "Quarter to date" | "Show all reviews";
 
@@ -108,7 +110,8 @@ const renderStars = (rating: number) => {
 };
 
 function CustomerServiceDashboardPage() {
-  const [selectedRange, setSelectedRange] = useState<RangeOption>("Last 30 days");
+  const { isPro } = useSubscription();
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("Last 7 days");
   const [isRangeMenuOpen, setIsRangeMenuOpen] = useState(false);
   const [isNegativeDrawerOpen, setIsNegativeDrawerOpen] = useState(false);
   const [rawReviews, setRawReviews] = useState<RawReview[]>([]);
@@ -118,6 +121,10 @@ function CustomerServiceDashboardPage() {
   const { business } = useBusinessData();
   const updateBusinessData = useUpdateBusinessData();
 
+  // Free tier: restrict to 7-day range only
+  const freeRangeOptions: RangeOption[] = ["Last 7 days"];
+  const effectiveRangeOptions = isPro ? rangeOptions : freeRangeOptions;
+
   // Initialise threshold and resolved IDs from saved business data
   useEffect(() => {
     if (!business) return;
@@ -126,13 +133,14 @@ function CustomerServiceDashboardPage() {
   }, [business]);
 
   const handleCycleRange = () => {
-    const currentIndex = rangeOptions.indexOf(selectedRange);
-    const nextIndex = (currentIndex + 1) % rangeOptions.length;
-    setSelectedRange(rangeOptions[nextIndex]);
+    const currentIndex = effectiveRangeOptions.indexOf(selectedRange);
+    const nextIndex = (currentIndex + 1) % effectiveRangeOptions.length;
+    setSelectedRange(effectiveRangeOptions[nextIndex]);
     setIsRangeMenuOpen(false);
   };
 
   const handleSelectRange = (option: RangeOption) => {
+    if (!isPro && option !== "Last 7 days") return;
     setSelectedRange(option);
     setIsRangeMenuOpen(false);
   };
@@ -265,22 +273,29 @@ function CustomerServiceDashboardPage() {
                     Choose range
                   </p>
                   <ul className="space-y-1">
-                    {rangeOptions.map((option) => (
+                    {rangeOptions.map((option) => {
+                      const locked = !isPro && option !== "Last 7 days";
+                      return (
                       <li key={option}>
                         <button
                           type="button"
                           onClick={() => handleSelectRange(option)}
+                          disabled={locked}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm ${
                             option === selectedRange
                               ? "bg-gray-900 text-white"
+                              : locked
+                              ? "text-gray-400 cursor-not-allowed"
                               : "text-gray-700 hover:bg-linear-to-r hover:from-[#F2C125] hover:to-[#FF8C1A] hover:text-white"
                           } transition-colors`}
                         >
                           {option}
+                          {locked && <span className="text-xs">Pro</span>}
                           {option === selectedRange && <span className="text-xs font-medium">Active</span>}
                         </button>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -418,10 +433,12 @@ function CustomerServiceDashboardPage() {
                 {unresolvedFlagged.length === 0 ? (
                   <p className="text-center text-gray-500 py-8">All flagged reviews have been resolved.</p>
                 ) : (
-                  unresolvedFlagged.map((review) => (
+                  unresolvedFlagged.map((review, idx) => {
+                    const isBlurred = !isPro && idx >= 3;
+                    return (
                     <article
                       key={review.docId}
-                      className="space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4"
+                      className={`space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4 ${isBlurred ? "blur-sm pointer-events-none select-none" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
@@ -433,6 +450,7 @@ function CustomerServiceDashboardPage() {
                       <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-gray-400">{review.timestamp}</p>
+                        {isPro ? (
                         <button
                           type="button"
                           onClick={() => handleResolve(review.docId)}
@@ -441,12 +459,22 @@ function CustomerServiceDashboardPage() {
                           <Check size={13} />
                           Mark Resolved
                         </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Pro feature</span>
+                        )}
                       </div>
                     </article>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
+
+            {!isPro && unresolvedFlagged.length > 3 && (
+              <div className="px-6 pt-2">
+                <UpgradeBanner feature="Full Action Items" />
+              </div>
+            )}
 
             <div className="shrink-0 flex items-center justify-center gap-3 p-6 pt-4 border-t border-gray-200">
               <button

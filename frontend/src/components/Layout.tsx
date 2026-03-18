@@ -4,6 +4,8 @@ import { useTheme } from "../theme/ThemeProvider";
 import { auth } from "../firebaseConfig";
 import { signOut } from "firebase/auth";
 import { useAuth } from "../firebaseHelpers/AuthContext";
+import { useSubscription } from "../firebaseHelpers/useSubscription";
+import { Sparkles } from "lucide-react";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const loc = useLocation();
@@ -21,15 +23,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const isLanding = loc.pathname === "/";
   const isAuthPage = loc.pathname === "/signup" || loc.pathname === "/login";
+  const isPricingPage = loc.pathname === "/pricing";
+  const isSuccessPage = loc.pathname === "/subscription/success";
   // Customer-facing flow (QR -> feedback -> reward) should be independent and not show the app header
   const isCustomerFlow = loc.pathname === "/feedback" || loc.pathname.startsWith("/feedback") || loc.pathname === "/reward" || loc.pathname.startsWith("/reward");
   const isPortal = loc.pathname === "/portal" || loc.pathname.startsWith("/portal/");
+  const isFullScreenPage = isLanding || isAuthPage || isCustomerFlow || isPricingPage || isSuccessPage;
   useAuth();
+  const { isPro } = useSubscription();
 
   return (
-  <div className={isLanding ? "min-h-screen text-app-foreground flex flex-col" : isAuthPage ? "min-h-screen text-app-foreground flex flex-col" : "min-h-screen text-app-foreground flex flex-col"} style={!isLanding && !isAuthPage && !isCustomerFlow ? { backgroundColor: '#ffb133' } : {}}>
-  {/* Hide header on the public landing page, auth pages, and customer-facing feedback/reward pages */}
-  {!isLanding && !isAuthPage && !isCustomerFlow && (
+  <div className="min-h-screen text-app-foreground flex flex-col" style={!isFullScreenPage ? { backgroundColor: '#ffb133' } : {}}>
+  {/* Hide header on the public landing page, auth pages, pricing, success, and customer-facing feedback/reward pages */}
+  {!isFullScreenPage && (
         <header className="border-b border-gray-200 backdrop-blur-sm bg-white/80 sticky top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center">
             <div className="flex items-center gap-4">
@@ -42,13 +48,32 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <div>
                 <span className="font-bold text-3xl">StarBoard</span>
               </div>
+              {isPro && (
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-[#F2C125] to-[#FF8C1A] text-white text-xs font-bold rounded-full">
+                  <Sparkles size={12} /> PRO
+                </span>
+              )}
             </div>
-            <nav className="flex items-center gap-6 ml-auto">
-              {/* Only show Sign Out button when not on login page */}
+            <nav className="flex items-center gap-4 ml-auto">
+              {!isPro && (
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#F2C125] to-[#FF8C1A] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition"
+                >
+                  <Sparkles size={14} />
+                  Upgrade to Pro
+                </button>
+              )}
+              <button
+                onClick={() => navigate("/account")}
+                className="text-sm font-semibold transition-all px-4 py-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+              >
+                Account
+              </button>
               {loc.pathname !== "/login" && (
                 <button
                   onClick={handleSignOut}
-                  className="text-lg font-semibold transition-all px-5 py-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                  className="text-sm font-semibold transition-all px-4 py-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50"
                 >
                   Sign Out
                 </button>
@@ -60,8 +85,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
       <main
       className={
-        // For landing/auth/customer flow, render as a standalone centered page without the header
-        isLanding || isAuthPage || isCustomerFlow
+        // For landing/auth/customer flow/pricing/success, render as a standalone centered page without the header
+        isFullScreenPage
           ? "w-full p-0 flex-1 flex items-center justify-center"
           : isPortal
           ? "w-full flex-1 px-6 py-6"
@@ -70,8 +95,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       style={{ minHeight: "0" }}
     >
     <div
-      className={isLanding || isAuthPage || isCustomerFlow ? "w-full" : "w-full max-w-3xl mx-auto"}
-      style={isLanding || isAuthPage || isCustomerFlow ? {} : { maxHeight: "calc(100vh - 96px)", overflow: "auto" }}
+      className={isFullScreenPage ? "w-full" : "w-full max-w-3xl mx-auto"}
+      style={isFullScreenPage ? {} : { maxHeight: "calc(100vh - 96px)", overflow: "auto" }}
     >
       {children}
     </div>
