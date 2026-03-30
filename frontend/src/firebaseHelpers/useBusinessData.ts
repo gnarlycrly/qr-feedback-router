@@ -12,6 +12,14 @@ interface SubscriptionData {
   cancelAtPeriodEnd: boolean;
 }
 
+export interface SurveyQuestion {
+  id: string;
+  type: "rating" | "openended" | "checkbox";
+  question: string;
+  required?: boolean;
+  options?: string[];
+}
+
 interface BusinessData {
   name: string;
   address: string;
@@ -25,6 +33,7 @@ interface BusinessData {
   customer_ratingPrompt: string;
   customer_feedbackPrompt: string;
   customer_submitButtonText: string;
+  customSurveyQuestions?: SurveyQuestion[];
   flaggingThreshold?: number;
   resolvedReviewIds?: string[];
   subscription?: SubscriptionData;

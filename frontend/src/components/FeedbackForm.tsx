@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import RatingStars from "./RatingStars";
+import type { SurveyQuestion } from "../firebaseHelpers/useBusinessData";
 
 type FormCustomization = {
   customer_businessName: string;
@@ -17,15 +18,19 @@ type FormCustomization = {
 interface FeedbackFormProps {
   customization?: FormCustomization;
   businessId?: string;
+  customSurveyQuestions?: SurveyQuestion[];
+  isPreviewMode?: boolean;
+  onQuestionUpdate?: (id: string, question: string) => void;
   // optional path to navigate to after successful submit (e.g. reward page)
   successPath?: string;
   // optional callback to run after successful submit (preferred over successPath)
   onSuccess?: (feedbackData: { rating: number; comment: string }) => void;
 }
 
-export default function FeedbackForm({ customization, businessId, successPath, onSuccess }: FeedbackFormProps) {
+export default function FeedbackForm({ customization, businessId, customSurveyQuestions = [], isPreviewMode = false, onQuestionUpdate, successPath, onSuccess }: FeedbackFormProps) {
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | number>>({});
   const [effectiveCustomization, setEffectiveCustomization] = useState<FormCustomization | undefined>(customization);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -102,6 +107,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
           businessName: effectiveCustomization?.customer_businessName || "Sample Business",
           rating,
           comments,
+          surveyAnswers,
           createdAt: serverTimestamp(),
         });
         console.log("Feedback saved to Firestore");
@@ -124,6 +130,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
       // reset form (you can remove this if you don't want auto clear)
       setRating(0);
       setComments("");
+      setSurveyAnswers({});
 
       // If parent provided an onSuccess callback, call it with feedback data. Otherwise navigate in-app to reward.
       if (onSuccess) {
@@ -145,44 +152,61 @@ export default function FeedbackForm({ customization, businessId, successPath, o
   return (
     <article className="relative overflow-hidden rounded-3xl bg-white shadow-md w-full max-w-md p-5 sm:p-8">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
-        {/* Header */}
-        <div className="text-center pb-4 border-b border-gray-100">
-          <h1
-            style={{ color: effectiveCustomization?.customer_primaryColor || '#2563eb' }}
-            className="text-3xl font-extrabold mb-2 text-slate-900"
-          >
-            {effectiveCustomization?.customer_businessName || customization?.customer_businessName || "Sample Business"}
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            {effectiveCustomization?.customer_headerText || customization?.customer_headerText || "How was your experience?"}
-          </p>
-        </div>
-
-        {/* Stars */}
-        <div className="flex flex-col items-center text-center py-4">
-          <RatingStars value={rating} onChange={setRating} />
-          <p className="text-gray-700 text-base mt-4 font-medium">
-            {effectiveCustomization?.customer_ratingPrompt || customization?.customer_ratingPrompt || "Rate your experience"}
-          </p>
-        </div>
-
-        {/* Text area */}
-        <div className="text-left">
-          <label
-            htmlFor="comments"
-            className="block text-sm font-semibold text-gray-700 mb-3"
-          >
-            {effectiveCustomization?.customer_feedbackPrompt || customization?.customer_feedbackPrompt || "Tell us more about your experience (optional)"}
-          </label>
-
-          <textarea
-            id="comments"
-            className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[120px] transition-all duration-200 resize-none"
-            placeholder="What did you like most? Any suggestions for improvement?"
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-          />
-        </div>
+        {/* Custom Survey Questions */}
+        {customSurveyQuestions && customSurveyQuestions.length > 0 && customSurveyQuestions.map((question) => (
+          <div key={question.id} className="text-left">
+            {isPreviewMode ? (
+              <input
+                type="text"
+                value={question.question}
+                onChange={(e) => onQuestionUpdate?.(question.id, e.target.value)}
+                className="block w-full text-sm font-semibold text-gray-700 mb-3 px-2 py-1 border border-transparent hover:border-gray-300 focus:border-blue-500 rounded transition-colors bg-transparent"
+                placeholder="Click to edit question..."
+              />
+            ) : (
+              question.question && (
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  {question.question}
+                </label>
+              )
+            )}
+            {question.type === "rating" ? (
+              <div className="flex justify-center">
+                <RatingStars 
+                  value={surveyAnswers[question.id] as number || 0} 
+                  onChange={(val) => setSurveyAnswers({...surveyAnswers, [question.id]: val})} 
+                />
+              </div>
+            ) : question.type === "checkbox" ? (
+              <div className="space-y-2">
+                {question.options?.map((option, index) => (
+                  <label key={index} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(surveyAnswers[question.id] as string[] || []).includes(option)}
+                      onChange={(e) => {
+                        const current = (surveyAnswers[question.id] as string[]) || [];
+                        const updated = e.target.checked
+                          ? [...current, option]
+                          : current.filter(v => v !== option);
+                        setSurveyAnswers({...surveyAnswers, [question.id]: updated});
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">{option}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <textarea
+                className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[100px] transition-all duration-200 resize-none"
+                placeholder="Your answer..."
+                value={surveyAnswers[question.id] as string || ""}
+                onChange={(e) => setSurveyAnswers({...surveyAnswers, [question.id]: e.target.value})}
+              />
+            )}
+          </div>
+        ))}
 
         {/* Submit button */}
         <button
@@ -196,7 +220,7 @@ export default function FeedbackForm({ customization, businessId, successPath, o
         >
           {loading 
             ? "Submitting..." 
-            : (effectiveCustomization?.customer_submitButtonText || customization?.customer_submitButtonText || "Submit Review")
+            : "Submit Review"
           }
         </button>
       </form>
