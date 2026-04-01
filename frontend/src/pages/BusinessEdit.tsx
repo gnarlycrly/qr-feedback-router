@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import BlackButton from "../components/BlackButton";
 import FeedbackForm from "../components/FeedbackForm";
-import { ChevronDown, ChevronRight, Check, Gift, Star, MessageSquare, X, CheckSquare } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Gift, Star, MessageSquare, X, CheckSquare, Pencil } from "lucide-react";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
 import type { SurveyQuestion } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
 import { useSubscription } from "../firebaseHelpers/useSubscription";
-import SubscriptionGate from "../components/SubscriptionGate";
 
 const BusinessEdit: React.FC = () => {
   const { business, loading } = useBusinessData();
@@ -33,6 +32,8 @@ const BusinessEdit: React.FC = () => {
     customer_ratingPrompt: "Rate your experience",
     customer_feedbackPrompt: "Tell us more about your experience (optional)",
     customer_submitButtonText: "Submit review",
+    customer_thanksTitle: "Thank you!",
+    customer_thanksSubtitle: "Your feedback has been submitted successfully.",
   });
 
   const [customSurveyQuestions, setCustomSurveyQuestions] = useState<SurveyQuestion[]>([]);
@@ -61,6 +62,8 @@ const BusinessEdit: React.FC = () => {
       customer_ratingPrompt: business.customer_ratingPrompt || prev.customer_ratingPrompt,
       customer_feedbackPrompt: business.customer_feedbackPrompt || prev.customer_feedbackPrompt,
       customer_submitButtonText: business.customer_submitButtonText || "Submit review",
+      customer_thanksTitle: (business as any)?.customer_thanksTitle || prev.customer_thanksTitle,
+      customer_thanksSubtitle: (business as any)?.customer_thanksSubtitle || prev.customer_thanksSubtitle,
     }));
     setCustomSurveyQuestions(business.customSurveyQuestions || []);
     setInitialized(true);
@@ -110,6 +113,8 @@ const BusinessEdit: React.FC = () => {
         customer_ratingPrompt: form.customer_ratingPrompt,
         customer_feedbackPrompt: form.customer_feedbackPrompt,
         customer_submitButtonText: form.customer_submitButtonText,
+        customer_thanksTitle: form.customer_thanksTitle,
+        customer_thanksSubtitle: form.customer_thanksSubtitle,
         customSurveyQuestions,
       });
       // clear any locally-stored temporary color choices since the saved business now holds the source of truth
@@ -133,9 +138,10 @@ const BusinessEdit: React.FC = () => {
   const [collapsedIdentity, setCollapsedIdentity] = useState(true);
   // default to collapsed so the Brand Styling accordion isn't auto-opened every time
   const [collapsedBrand, setCollapsedBrand] = useState(true);
-  const [collapsedCopy, setCollapsedCopy] = useState(true);
   const [previewMode, setPreviewMode] = useState<"form" | "thanks">("form");
   const [submittedFeedbackForPreview, setSubmittedFeedbackForPreview] = useState<{ rating: number; comment: string } | null>(null);
+  const [editingThanksTitle, setEditingThanksTitle] = useState(false);
+  const [editingThanksSubtitle, setEditingThanksSubtitle] = useState(false);
 
   const addRatingQuestion = () => {
     const newQuestion: SurveyQuestion = {
@@ -234,6 +240,8 @@ const BusinessEdit: React.FC = () => {
     customer_ratingPrompt: form.customer_ratingPrompt,
     customer_feedbackPrompt: form.customer_feedbackPrompt,
     customer_submitButtonText: form.customer_submitButtonText,
+    customer_thanksTitle: form.customer_thanksTitle,
+    customer_thanksSubtitle: form.customer_thanksSubtitle,
   };
   // determine the currently active reward (if any) from the loaded business data
   const activeReward = (business as any)?.rewards ? (business as any).rewards.find((r: any) => r.active) : null;
@@ -375,6 +383,8 @@ const BusinessEdit: React.FC = () => {
               customer_ratingPrompt: business.customer_ratingPrompt || prev.customer_ratingPrompt,
               customer_feedbackPrompt: business.customer_feedbackPrompt || prev.customer_feedbackPrompt,
               customer_submitButtonText: business.customer_submitButtonText || "Submit review",
+              customer_thanksTitle: (business as any)?.customer_thanksTitle || prev.customer_thanksTitle,
+              customer_thanksSubtitle: (business as any)?.customer_thanksSubtitle || prev.customer_thanksSubtitle,
             }));
             setCustomSurveyQuestions(business.customSurveyQuestions || []);
             setInitialized(true);
@@ -411,126 +421,128 @@ const BusinessEdit: React.FC = () => {
           </div>
 
           <div className="flex items-start justify-start gap-4">
-            {/* Toolbar */}
-            <div className="flex flex-col gap-4 flex-shrink-0">
-              <div className="flex flex-col gap-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
-                <button
-                  onClick={addRatingQuestion}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Add 5-star rating question"
-                >
-                  <Star size={18} className="text-yellow-500" />
-                  <span className="whitespace-nowrap">Rating</span>
-                </button>
-                <button
-                  onClick={addOpenEndedQuestion}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Add open-ended question"
-                >
-                  <MessageSquare size={18} className="text-blue-500" />
-                  <span className="whitespace-nowrap">Text</span>
-                </button>
-                <button
-                  onClick={addCheckboxQuestion}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Add checkbox question"
-                >
-                  <CheckSquare size={18} className="text-green-500" />
-                  <span className="whitespace-nowrap">Checkbox</span>
-                </button>
-              </div>
-
-              {/* Question Editor */}
-              {customSurveyQuestions.length > 0 && (
-                <div className="w-80 space-y-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex-shrink-0">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Custom Questions</h3>
-                  {customSurveyQuestions.map((q, index) => (
-                    <div key={q.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="flex items-start gap-2">
-                        <div className="flex flex-col gap-1 mt-1">
-                          <button
-                            onClick={() => moveQuestion(q.id, "up")}
-                            disabled={index === 0}
-                            className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                          >
-                            <ChevronDown size={14} className="rotate-180" />
-                          </button>
-                          <button
-                            onClick={() => moveQuestion(q.id, "down")}
-                            disabled={index === customSurveyQuestions.length - 1}
-                            className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                          >
-                            <ChevronDown size={14} />
-                          </button>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {q.type === "rating" ? (
-                              <Star size={14} className="text-yellow-500" />
-                            ) : q.type === "checkbox" ? (
-                              <CheckSquare size={14} className="text-green-500" />
-                            ) : (
-                              <MessageSquare size={14} className="text-blue-500" />
-                            )}
-                            <span className="text-xs text-gray-500">
-                              {q.type === "rating" ? "5-Star Rating" : q.type === "checkbox" ? "Checkbox" : "Open-Ended"}
-                            </span>
-                          </div>
-                          <textarea
-                            value={q.question}
-                            onChange={(e) => updateQuestion(q.id, e.target.value)}
-                            className="w-full text-sm px-2 py-1 border border-gray-300 rounded resize-none"
-                            placeholder="Enter question..."
-                            rows={1}
-                            style={{ minHeight: '32px', overflow: 'hidden' }}
-                            onInput={(e) => {
-                              const target = e.target as HTMLTextAreaElement;
-                              target.style.height = 'auto';
-                              target.style.height = target.scrollHeight + 'px';
-                            }}
-                          />
-                          {q.type === "checkbox" && q.options && (
-                            <div className="mt-2 space-y-1">
-                              {q.options.map((option, optIndex) => (
-                                <div key={optIndex} className="flex items-center gap-1">
-                                  <input
-                                    type="text"
-                                    value={option}
-                                    onChange={(e) => updateQuestionOption(q.id, optIndex, e.target.value)}
-                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded"
-                                    placeholder={`Option ${optIndex + 1}`}
-                                  />
-                                  {q.options && q.options.length > 1 && (
-                                    <button
-                                      onClick={() => removeQuestionOption(q.id, optIndex)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                              <button
-                                onClick={() => addQuestionOption(q.id)}
-                                className="text-xs text-blue-600 hover:text-blue-800 mt-1"
-                              >
-                                + Add option
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeQuestion(q.id)}
-                          className="text-red-500 hover:text-red-700 mt-1"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {/* Toolbar - only show while editing the feedback form */}
+            {previewMode === "form" && (
+              <div className="flex flex-col gap-4 shrink-0">
+                <div className="flex flex-col gap-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                  <button
+                    onClick={addRatingQuestion}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    title="Add 5-star rating question"
+                  >
+                    <Star size={18} className="text-yellow-500" />
+                    <span className="whitespace-nowrap">Rating</span>
+                  </button>
+                  <button
+                    onClick={addOpenEndedQuestion}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    title="Add open-ended question"
+                  >
+                    <MessageSquare size={18} className="text-blue-500" />
+                    <span className="whitespace-nowrap">Text</span>
+                  </button>
+                  <button
+                    onClick={addCheckboxQuestion}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    title="Add checkbox question"
+                  >
+                    <CheckSquare size={18} className="text-green-500" />
+                    <span className="whitespace-nowrap">Checkbox</span>
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {/* Question Editor */}
+                {customSurveyQuestions.length > 0 && (
+                  <div className="w-80 space-y-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm shrink-0">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Custom Questions</h3>
+                    {customSurveyQuestions.map((q, index) => (
+                      <div key={q.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-start gap-2">
+                          <div className="flex flex-col gap-1 mt-1">
+                            <button
+                              onClick={() => moveQuestion(q.id, "up")}
+                              disabled={index === 0}
+                              className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                            >
+                              <ChevronDown size={14} className="rotate-180" />
+                            </button>
+                            <button
+                              onClick={() => moveQuestion(q.id, "down")}
+                              disabled={index === customSurveyQuestions.length - 1}
+                              className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                            >
+                              <ChevronDown size={14} />
+                            </button>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {q.type === "rating" ? (
+                                <Star size={14} className="text-yellow-500" />
+                              ) : q.type === "checkbox" ? (
+                                <CheckSquare size={14} className="text-green-500" />
+                              ) : (
+                                <MessageSquare size={14} className="text-blue-500" />
+                              )}
+                              <span className="text-xs text-gray-500">
+                                {q.type === "rating" ? "5-Star Rating" : q.type === "checkbox" ? "Checkbox" : "Open-Ended"}
+                              </span>
+                            </div>
+                            <textarea
+                              value={q.question}
+                              onChange={(e) => updateQuestion(q.id, e.target.value)}
+                              className="w-full text-sm px-2 py-1 border border-gray-300 rounded resize-none"
+                              placeholder="Enter question..."
+                              rows={1}
+                              style={{ minHeight: '32px', overflow: 'hidden' }}
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement;
+                                target.style.height = 'auto';
+                                target.style.height = target.scrollHeight + 'px';
+                              }}
+                            />
+                            {q.type === "checkbox" && q.options && (
+                              <div className="mt-2 space-y-1">
+                                {q.options.map((option, optIndex) => (
+                                  <div key={optIndex} className="flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      value={option}
+                                      onChange={(e) => updateQuestionOption(q.id, optIndex, e.target.value)}
+                                      className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded"
+                                      placeholder={`Option ${optIndex + 1}`}
+                                    />
+                                    {q.options && q.options.length > 1 && (
+                                      <button
+                                        onClick={() => removeQuestionOption(q.id, optIndex)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => addQuestionOption(q.id)}
+                                  className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+                                >
+                                  + Add option
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => removeQuestion(q.id)}
+                            className="text-red-500 hover:text-red-700 mt-1"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-col items-start">
             <div className="bg-transparent flex items-start justify-start">
@@ -590,9 +602,56 @@ const BusinessEdit: React.FC = () => {
                         <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'linear-gradient(135deg,' + (customization.customer_primaryColor || '#10b981') + ', #e6f9f0)' }}>
                           <Check className="h-8 w-8 text-white" />
                         </div>
-                        <div>
-                          <h2 style={{ color: customization.customer_primaryColor }} className="text-2xl font-bold">Thank you!</h2>
-                          <p className="text-gray-700 mt-2 text-sm">Your feedback has been submitted successfully.</p>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            {editingThanksTitle ? (
+                              <input
+                                name="customer_thanksTitle"
+                                value={form.customer_thanksTitle}
+                                onChange={handleChange}
+                                onBlur={() => setEditingThanksTitle(false)}
+                                autoFocus
+                                className="text-2xl font-bold text-center border border-gray-200 rounded px-2 py-1 focus:border-blue-400 focus:outline-none"
+                                style={{ color: customization.customer_primaryColor }}
+                              />
+                            ) : (
+                              <>
+                                <h2 style={{ color: customization.customer_primaryColor }} className="text-2xl font-bold">{form.customer_thanksTitle}</h2>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingThanksTitle(true)}
+                                  className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                                  aria-label="Edit thank you title"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editingThanksSubtitle ? (
+                              <input
+                                name="customer_thanksSubtitle"
+                                value={form.customer_thanksSubtitle}
+                                onChange={handleChange}
+                                onBlur={() => setEditingThanksSubtitle(false)}
+                                autoFocus
+                                className="text-gray-700 text-sm text-center border border-gray-200 rounded px-2 py-1 focus:border-blue-400 focus:outline-none"
+                              />
+                            ) : (
+                              <>
+                                <p className="text-gray-700 text-sm">{form.customer_thanksSubtitle}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingThanksSubtitle(true)}
+                                  className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                                  aria-label="Edit thank you subtitle"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -614,7 +673,7 @@ const BusinessEdit: React.FC = () => {
 
                       <p className="mt-4 text-center text-sm text-gray-600">We truly appreciate you taking the time to share your experience with <span className="font-semibold text-gray-800">{customization.customer_businessName}</span>. Enjoy this thank-you offer on us!</p>
 
-                      <div className="mt-4 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
+                      <div className="mt-4 rounded-lg bg-linear-to-br from-indigo-50 to-violet-50 p-4">
                         <div className="flex justify-center">
                           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
                             <Gift className="h-6 w-6 text-indigo-600" />
