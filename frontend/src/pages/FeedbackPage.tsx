@@ -43,7 +43,7 @@ export default function FeedbackPage() {
         </button>
       </div>
 
-      <div className="flex-1 flex justify-center items-start px-4 py-4 pb-10">
+      <div className="flex-1 flex flex-col justify-center items-center px-4 py-4 pb-10">
         <FeedbackForm
           businessId={businessId || undefined}
           onSuccess={(feedbackData) => navigate(`${next}?fromFeedback=1&guest=1&business=${businessId || ''}`, {

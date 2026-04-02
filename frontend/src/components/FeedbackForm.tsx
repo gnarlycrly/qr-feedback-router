@@ -32,13 +32,16 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
   const [comments, setComments] = useState<string>("");
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | number>>({});
   const [effectiveCustomization, setEffectiveCustomization] = useState<FormCustomization | undefined>(customization);
+  const [effectiveSurveyQuestions, setEffectiveSurveyQuestions] = useState<SurveyQuestion[]>(customSurveyQuestions);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (customization) {
       setEffectiveCustomization(customization);
-      return;
+    }
+    if (customSurveyQuestions && customSurveyQuestions.length > 0) {
+      setEffectiveSurveyQuestions(customSurveyQuestions);
     }
 
     // If businessId is provided, fetch business data from Firestore
@@ -55,9 +58,14 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
               customer_headerText: businessData.customer_headerText || "How was your experience?",
               customer_ratingPrompt: businessData.customer_ratingPrompt|| "Rate your experience",
               customer_feedbackPrompt: businessData.customer_feedbackPrompt || "Tell us more about your experience (optional)",
-              customer_submitButtonText: businessData.customer_submitButtonText || "Submit Review",
+              customer_submitButtonText: businessData.customer_submitButtonText || "Submit review",
             };
             setEffectiveCustomization(merged);
+            
+            // Load custom survey questions from business data
+            if (businessData.customSurveyQuestions && businessData.customSurveyQuestions.length > 0) {
+              setEffectiveSurveyQuestions(businessData.customSurveyQuestions);
+            }
             return;
           }
         } catch (e) {
@@ -69,29 +77,31 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
     }
 
     // Fallback to localStorage for preview mode
-    try {
-      const raw = localStorage.getItem("ab_form_settings");
-      const businessRaw = localStorage.getItem("ab_business");
-      const themeRaw = localStorage.getItem("ab_theme");
-      const fromForm = raw ? JSON.parse(raw) : undefined;
-      const business = businessRaw ? JSON.parse(businessRaw) : undefined;
-      const theme = themeRaw ? JSON.parse(themeRaw) : undefined;
+    if (!customization) {
+      try {
+        const raw = localStorage.getItem("ab_form_settings");
+        const businessRaw = localStorage.getItem("ab_business");
+        const themeRaw = localStorage.getItem("ab_theme");
+        const fromForm = raw ? JSON.parse(raw) : undefined;
+        const business = businessRaw ? JSON.parse(businessRaw) : undefined;
+        const theme = themeRaw ? JSON.parse(themeRaw) : undefined;
 
-      const merged: FormCustomization = {
-        customer_businessName: business?.businessName || fromForm?.businessName || "Sample Business",
-        customer_primaryColor: theme?.appPrimary || fromForm?.primaryColor || "#1A3673",
-        customer_accentColor: theme?.appAccent || fromForm?.accentColor || "#2563eb",
-        customer_headerText: fromForm?.headerText || "How was your experience?",
-        customer_ratingPrompt: fromForm?.ratingPrompt || "Rate your experience",
-        customer_feedbackPrompt: fromForm?.feedbackPrompt || "Tell us more about your experience (optional)",
-        customer_submitButtonText: fromForm?.submitButtonText || "Submit Review",
-      };
+        const merged: FormCustomization = {
+          customer_businessName: business?.businessName || fromForm?.businessName || "Sample Business",
+          customer_primaryColor: theme?.appPrimary || fromForm?.primaryColor || "#1A3673",
+          customer_accentColor: theme?.appAccent || fromForm?.accentColor || "#2563eb",
+          customer_headerText: fromForm?.headerText || "How was your experience?",
+          customer_ratingPrompt: fromForm?.ratingPrompt || "Rate your experience",
+          customer_feedbackPrompt: fromForm?.feedbackPrompt || "Tell us more about your experience (optional)",
+          customer_submitButtonText: fromForm?.submitButtonText || "Submit review",
+        };
 
-      setEffectiveCustomization(merged);
-    } catch (e) {
-      setEffectiveCustomization(undefined);
+        setEffectiveCustomization(merged);
+      } catch (e) {
+        setEffectiveCustomization(undefined);
+      }
     }
-  }, [customization, businessId]);
+  }, [customization, businessId, customSurveyQuestions]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -151,9 +161,24 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
 
   return (
     <article className="relative overflow-hidden rounded-3xl bg-white shadow-md w-full max-w-md p-5 sm:p-8">
+      {/* Business Name and Header Text */}
+      {!isPreviewMode && (
+        <div className="text-center pb-4 mb-6 border-b border-gray-100">
+          <h1
+            style={{ color: effectiveCustomization?.customer_primaryColor }}
+            className="text-3xl font-extrabold mb-2 text-slate-900"
+          >
+            {effectiveCustomization?.customer_businessName}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {effectiveCustomization?.customer_headerText}
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
         {/* Custom Survey Questions */}
-        {customSurveyQuestions && customSurveyQuestions.length > 0 && customSurveyQuestions.map((question) => (
+        {effectiveSurveyQuestions && effectiveSurveyQuestions.length > 0 && effectiveSurveyQuestions.map((question) => (
           <div key={question.id} className="text-left">
             {isPreviewMode ? (
               <input
@@ -174,7 +199,7 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
               <div className="flex justify-center">
                 <RatingStars 
                   value={surveyAnswers[question.id] as number || 0} 
-                  onChange={(val) => setSurveyAnswers({...surveyAnswers, [question.id]: val})} 
+                  onChange={isPreviewMode ? () => {} : (val) => setSurveyAnswers({...surveyAnswers, [question.id]: val})} 
                 />
               </div>
             ) : question.type === "checkbox" ? (
@@ -184,13 +209,14 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
                     <input
                       type="checkbox"
                       checked={(surveyAnswers[question.id] as string[] || []).includes(option)}
-                      onChange={(e) => {
+                      onChange={isPreviewMode ? () => {} : (e) => {
                         const current = (surveyAnswers[question.id] as string[]) || [];
                         const updated = e.target.checked
                           ? [...current, option]
                           : current.filter(v => v !== option);
                         setSurveyAnswers({...surveyAnswers, [question.id]: updated});
                       }}
+                      disabled={isPreviewMode}
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="text-sm text-gray-700">{option}</span>
@@ -202,7 +228,8 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
                 className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[100px] transition-all duration-200 resize-none"
                 placeholder="Your answer..."
                 value={surveyAnswers[question.id] as string || ""}
-                onChange={(e) => setSurveyAnswers({...surveyAnswers, [question.id]: e.target.value})}
+                onChange={isPreviewMode ? () => {} : (e) => setSurveyAnswers({...surveyAnswers, [question.id]: e.target.value})}
+                disabled={isPreviewMode}
               />
             )}
           </div>
@@ -211,16 +238,16 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
         {/* Submit button */}
         <button
           type="submit"
-          disabled={loading || rating === 0}
+          disabled={isPreviewMode || loading || rating === 0}
           style={{ 
             backgroundColor: effectiveCustomization?.customer_accentColor || 'var(--app-accent)',
-            opacity: loading || rating === 0 ? 0.6 : 1
+            opacity: isPreviewMode || loading || rating === 0 ? 0.6 : 1
           }}
           className="w-full rounded-xl text-white text-base font-semibold py-4 text-center shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           {loading 
             ? "Submitting..." 
-            : "Submit Review"
+            : (effectiveCustomization?.customer_submitButtonText || "Submit review")
           }
         </button>
       </form>
