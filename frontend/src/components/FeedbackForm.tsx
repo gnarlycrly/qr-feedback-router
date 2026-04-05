@@ -30,7 +30,7 @@ interface FeedbackFormProps {
 export default function FeedbackForm({ customization, businessId, customSurveyQuestions = [], isPreviewMode = false, onQuestionUpdate, successPath, onSuccess }: FeedbackFormProps) {
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
-  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | number>>({});
+  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | number | string[]>>({});
   const [effectiveCustomization, setEffectiveCustomization] = useState<FormCustomization | undefined>(customization);
   const [effectiveSurveyQuestions, setEffectiveSurveyQuestions] = useState<SurveyQuestion[]>(customSurveyQuestions);
   const [loading, setLoading] = useState(false);
@@ -208,9 +208,10 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
                   <label key={index} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={(surveyAnswers[question.id] as string[] || []).includes(option)}
+                      checked={Array.isArray(surveyAnswers[question.id]) ? (surveyAnswers[question.id] as string[]).includes(option) : false}
                       onChange={isPreviewMode ? () => {} : (e) => {
-                        const current = (surveyAnswers[question.id] as string[]) || [];
+                        const currentVal = surveyAnswers[question.id];
+                        const current = Array.isArray(currentVal) ? currentVal.slice() : [];
                         const updated = e.target.checked
                           ? [...current, option]
                           : current.filter(v => v !== option);
