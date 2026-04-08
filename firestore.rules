@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Customer feedback submissions
+    match /feedback/{docId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Issued unique reward codes
+    match /issuedRewards/{docId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+  }
+}

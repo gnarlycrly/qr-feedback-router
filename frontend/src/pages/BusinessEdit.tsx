@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import BlackButton from "../components/BlackButton";
 import FeedbackForm from "../components/FeedbackForm";
-import { ChevronDown, ChevronRight, Check, Gift, Star, MessageSquare, X, CheckSquare, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Gift, Pencil } from "lucide-react";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useBusinessData } from "../firebaseHelpers/useBusinessData";
-import type { SurveyQuestion } from "../firebaseHelpers/useBusinessData";
 import { useUpdateBusinessData } from "../firebaseHelpers/useUpdateBusinessData";
 import { useSubscription } from "../firebaseHelpers/useSubscription";
 
@@ -31,12 +30,11 @@ const BusinessEdit: React.FC = () => {
     customer_headerText: "How was your experience?",
     customer_ratingPrompt: "Rate your experience",
     customer_feedbackPrompt: "Tell us more about your experience (optional)",
+    customer_feedbackPlaceholder: "Your feedback...",
     customer_submitButtonText: "Submit review",
     customer_thanksTitle: "Thank you!",
     customer_thanksSubtitle: "Your feedback has been submitted successfully.",
   });
-
-  const [customSurveyQuestions, setCustomSurveyQuestions] = useState<SurveyQuestion[]>([]);
 
   const STORAGE_PRIMARY = "ab_customer_primaryColor";
   const STORAGE_ACCENT = "ab_customer_accentColor";
@@ -61,11 +59,11 @@ const BusinessEdit: React.FC = () => {
       customer_headerText: business.customer_headerText || prev.customer_headerText,
       customer_ratingPrompt: business.customer_ratingPrompt || prev.customer_ratingPrompt,
       customer_feedbackPrompt: business.customer_feedbackPrompt || prev.customer_feedbackPrompt,
+      customer_feedbackPlaceholder: (business as any).customer_feedbackPlaceholder || prev.customer_feedbackPlaceholder,
       customer_submitButtonText: business.customer_submitButtonText || "Submit review",
       customer_thanksTitle: (business as any)?.customer_thanksTitle || prev.customer_thanksTitle,
       customer_thanksSubtitle: (business as any)?.customer_thanksSubtitle || prev.customer_thanksSubtitle,
     }));
-    setCustomSurveyQuestions(business.customSurveyQuestions || []);
     setInitialized(true);
   }, [business, initialized]);
 
@@ -112,10 +110,10 @@ const BusinessEdit: React.FC = () => {
         customer_headerText: form.customer_headerText,
         customer_ratingPrompt: form.customer_ratingPrompt,
         customer_feedbackPrompt: form.customer_feedbackPrompt,
+        customer_feedbackPlaceholder: form.customer_feedbackPlaceholder,
         customer_submitButtonText: form.customer_submitButtonText,
         customer_thanksTitle: form.customer_thanksTitle,
         customer_thanksSubtitle: form.customer_thanksSubtitle,
-        customSurveyQuestions,
       });
       // clear any locally-stored temporary color choices since the saved business now holds the source of truth
       try {
@@ -143,89 +141,6 @@ const BusinessEdit: React.FC = () => {
   const [editingThanksTitle, setEditingThanksTitle] = useState(false);
   const [editingThanksSubtitle, setEditingThanksSubtitle] = useState(false);
 
-  const addRatingQuestion = () => {
-    const newQuestion: SurveyQuestion = {
-      id: Date.now().toString(),
-      type: "rating",
-      question: "",
-      required: false,
-    };
-    setCustomSurveyQuestions([...customSurveyQuestions, newQuestion]);
-  };
-
-  const addOpenEndedQuestion = () => {
-    const newQuestion: SurveyQuestion = {
-      id: Date.now().toString(),
-      type: "openended",
-      question: "",
-      required: false,
-    };
-    setCustomSurveyQuestions([...customSurveyQuestions, newQuestion]);
-  };
-
-  const addCheckboxQuestion = () => {
-    const newQuestion: SurveyQuestion = {
-      id: Date.now().toString(),
-      type: "checkbox",
-      question: "",
-      required: false,
-      options: [""],
-    };
-    setCustomSurveyQuestions([...customSurveyQuestions, newQuestion]);
-  };
-
-  const updateQuestion = (id: string, question: string) => {
-    setCustomSurveyQuestions(customSurveyQuestions.map(q => 
-      q.id === id ? { ...q, question } : q
-    ));
-  };
-
-  const updateQuestionOption = (id: string, optionIndex: number, value: string) => {
-    setCustomSurveyQuestions(customSurveyQuestions.map(q => {
-      if (q.id === id && q.options) {
-        const newOptions = [...q.options];
-        newOptions[optionIndex] = value;
-        return { ...q, options: newOptions };
-      }
-      return q;
-    }));
-  };
-
-  const addQuestionOption = (id: string) => {
-    setCustomSurveyQuestions(customSurveyQuestions.map(q => {
-      if (q.id === id && q.options) {
-        return { ...q, options: [...q.options, ""] };
-      }
-      return q;
-    }));
-  };
-
-  const removeQuestionOption = (id: string, optionIndex: number) => {
-    setCustomSurveyQuestions(customSurveyQuestions.map(q => {
-      if (q.id === id && q.options && q.options.length > 1) {
-        const newOptions = q.options.filter((_, i) => i !== optionIndex);
-        return { ...q, options: newOptions };
-      }
-      return q;
-    }));
-  };
-
-  const removeQuestion = (id: string) => {
-    setCustomSurveyQuestions(customSurveyQuestions.filter(q => q.id !== id));
-  };
-
-  const moveQuestion = (id: string, direction: "up" | "down") => {
-    const index = customSurveyQuestions.findIndex(q => q.id === id);
-    if (index === -1) return;
-    if (direction === "up" && index === 0) return;
-    if (direction === "down" && index === customSurveyQuestions.length - 1) return;
-    
-    const newQuestions = [...customSurveyQuestions];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
-    setCustomSurveyQuestions(newQuestions);
-  };
-
   if (loading && !initialized) {
     return <div className="max-w-3xl">Loading...</div>;
   }
@@ -239,9 +154,40 @@ const BusinessEdit: React.FC = () => {
     customer_headerText: form.customer_headerText,
     customer_ratingPrompt: form.customer_ratingPrompt,
     customer_feedbackPrompt: form.customer_feedbackPrompt,
+    customer_feedbackPlaceholder: form.customer_feedbackPlaceholder,
     customer_submitButtonText: form.customer_submitButtonText,
     customer_thanksTitle: form.customer_thanksTitle,
     customer_thanksSubtitle: form.customer_thanksSubtitle,
+  };
+
+  const resetCurrentMode = () => {
+    const DEFAULTS = {
+      customer_headerText: "How was your experience?",
+      customer_ratingPrompt: "Rate your experience",
+      customer_feedbackPrompt: "Tell us more about your experience (optional)",
+      customer_feedbackPlaceholder: "Your feedback...",
+      customer_submitButtonText: "Submit review",
+      customer_thanksTitle: "Thank you!",
+      customer_thanksSubtitle: "Your feedback has been submitted successfully.",
+    };
+
+    if (previewMode === "form") {
+      setForm((prev) => ({
+        ...prev,
+        customer_headerText: DEFAULTS.customer_headerText,
+        customer_ratingPrompt: DEFAULTS.customer_ratingPrompt,
+        customer_feedbackPrompt: DEFAULTS.customer_feedbackPrompt,
+        customer_feedbackPlaceholder: DEFAULTS.customer_feedbackPlaceholder,
+        customer_submitButtonText: DEFAULTS.customer_submitButtonText,
+      }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      customer_thanksTitle: DEFAULTS.customer_thanksTitle,
+      customer_thanksSubtitle: DEFAULTS.customer_thanksSubtitle,
+    }));
   };
   // determine the currently active reward (if any) from the loaded business data
   const activeReward = (business as any)?.rewards ? (business as any).rewards.find((r: any) => r.active) : null;
@@ -366,35 +312,9 @@ const BusinessEdit: React.FC = () => {
       <div className="pt-4 border-t border-gray-100 mt-4">
         <div className="flex items-center gap-3">
           <BlackButton onClick={handleSave} label={saving ? "Saving..." : "Save Changes"} />
-          <button onClick={() => {
-          // reset to loaded business values
-          setInitialized(false);
-          if (business) {
-            setForm((prev) => ({ ...prev,
-              name: business.name || "",
-              phone_number: business.phone_number || "",
-              address: business.address || "",
-              email: business.email || "",
-              website_url: business.website_url || "",
-              customer_businessName: business.customer_businessName || business.name || prev.customer_businessName,
-              customer_primaryColor: business.customer_primaryColor || prev.customer_primaryColor,
-              customer_accentColor: business.customer_accentColor || prev.customer_accentColor,
-              customer_headerText: business.customer_headerText || prev.customer_headerText,
-              customer_ratingPrompt: business.customer_ratingPrompt || prev.customer_ratingPrompt,
-              customer_feedbackPrompt: business.customer_feedbackPrompt || prev.customer_feedbackPrompt,
-              customer_submitButtonText: business.customer_submitButtonText || "Submit review",
-              customer_thanksTitle: (business as any)?.customer_thanksTitle || prev.customer_thanksTitle,
-              customer_thanksSubtitle: (business as any)?.customer_thanksSubtitle || prev.customer_thanksSubtitle,
-            }));
-            setCustomSurveyQuestions(business.customSurveyQuestions || []);
-            setInitialized(true);
-            // if user resets, remove any temporary color overrides
-            try {
-              localStorage.removeItem(STORAGE_PRIMARY);
-              localStorage.removeItem(STORAGE_ACCENT);
-            } catch (e) {}
-          }
-        }} className="btn-secondary">Reset</button>
+          <button onClick={resetCurrentMode} className="btn-secondary">
+            Reset Current View
+          </button>
         </div>
       </div>
 
@@ -420,131 +340,8 @@ const BusinessEdit: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-start justify-start gap-4">
-            {/* Toolbar - only show while editing the feedback form */}
-            {previewMode === "form" && (
-              <div className="flex flex-col gap-4 shrink-0">
-                <div className="flex flex-col gap-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
-                  <button
-                    onClick={addRatingQuestion}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    title="Add 5-star rating question"
-                  >
-                    <Star size={18} className="text-yellow-500" />
-                    <span className="whitespace-nowrap">Rating</span>
-                  </button>
-                  <button
-                    onClick={addOpenEndedQuestion}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    title="Add open-ended question"
-                  >
-                    <MessageSquare size={18} className="text-blue-500" />
-                    <span className="whitespace-nowrap">Text</span>
-                  </button>
-                  <button
-                    onClick={addCheckboxQuestion}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    title="Add checkbox question"
-                  >
-                    <CheckSquare size={18} className="text-green-500" />
-                    <span className="whitespace-nowrap">Checkbox</span>
-                  </button>
-                </div>
-
-                {/* Question Editor */}
-                {customSurveyQuestions.length > 0 && (
-                  <div className="w-80 space-y-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm shrink-0">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Custom Questions</h3>
-                    {customSurveyQuestions.map((q, index) => (
-                      <div key={q.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <div className="flex items-start gap-2">
-                          <div className="flex flex-col gap-1 mt-1">
-                            <button
-                              onClick={() => moveQuestion(q.id, "up")}
-                              disabled={index === 0}
-                              className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                            >
-                              <ChevronDown size={14} className="rotate-180" />
-                            </button>
-                            <button
-                              onClick={() => moveQuestion(q.id, "down")}
-                              disabled={index === customSurveyQuestions.length - 1}
-                              className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                            >
-                              <ChevronDown size={14} />
-                            </button>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              {q.type === "rating" ? (
-                                <Star size={14} className="text-yellow-500" />
-                              ) : q.type === "checkbox" ? (
-                                <CheckSquare size={14} className="text-green-500" />
-                              ) : (
-                                <MessageSquare size={14} className="text-blue-500" />
-                              )}
-                              <span className="text-xs text-gray-500">
-                                {q.type === "rating" ? "5-Star Rating" : q.type === "checkbox" ? "Checkbox" : "Open-Ended"}
-                              </span>
-                            </div>
-                            <textarea
-                              value={q.question}
-                              onChange={(e) => updateQuestion(q.id, e.target.value)}
-                              className="w-full text-sm px-2 py-1 border border-gray-300 rounded resize-none"
-                              placeholder="Enter question..."
-                              rows={1}
-                              style={{ minHeight: '32px', overflow: 'hidden' }}
-                              onInput={(e) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                target.style.height = 'auto';
-                                target.style.height = target.scrollHeight + 'px';
-                              }}
-                            />
-                            {q.type === "checkbox" && q.options && (
-                              <div className="mt-2 space-y-1">
-                                {q.options.map((option, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-1">
-                                    <input
-                                      type="text"
-                                      value={option}
-                                      onChange={(e) => updateQuestionOption(q.id, optIndex, e.target.value)}
-                                      className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded"
-                                      placeholder={`Option ${optIndex + 1}`}
-                                    />
-                                    {q.options && q.options.length > 1 && (
-                                      <button
-                                        onClick={() => removeQuestionOption(q.id, optIndex)}
-                                        className="text-red-500 hover:text-red-700"
-                                      >
-                                        <X size={12} />
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => addQuestionOption(q.id)}
-                                  className="text-xs text-blue-600 hover:text-blue-800 mt-1"
-                                >
-                                  + Add option
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => removeQuestion(q.id)}
-                            className="text-red-500 hover:text-red-700 mt-1"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col items-start">
+          <div className="flex items-start justify-start">
+            <div className="flex flex-col items-start w-full">
             <div className="bg-transparent flex items-start justify-start">
               <div className="rounded-2xl bg-white w-auto" style={{ border: '1px solid rgba(0,0,0,0.06)', padding: 20 }}>
                 <div className="w-auto">
@@ -567,32 +364,38 @@ const BusinessEdit: React.FC = () => {
                         />
                       </div>
 
-                      {/* Instructions */}
-                      {customSurveyQuestions.length === 0 ? (
-                        <div className="py-12 text-center">
-                          <div className="flex justify-center mb-4">
-                            <div className="flex gap-2">
-                              <Star size={24} className="text-yellow-500" />
-                              <MessageSquare size={24} className="text-blue-500" />
-                            </div>
-                          </div>
-                          <p className="text-gray-500 text-sm">
-                            Click the buttons on the left to add questions to your feedback form
-                          </p>
-                        </div>
-                      ) : (
-                        <FeedbackForm
-                          customization={customization}
-                          businessId={businessId || undefined}
-                          customSurveyQuestions={customSurveyQuestions}
-                          isPreviewMode={true}
-                          onQuestionUpdate={updateQuestion}
-                          onSuccess={(data) => {
-                            setSubmittedFeedbackForPreview(data);
-                            setPreviewMode("thanks");
-                          }}
+                      <div className="grid grid-cols-1 gap-3 py-4">
+                        <input
+                          name="customer_ratingPrompt"
+                          value={form.customer_ratingPrompt}
+                          onChange={handleChange}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="Rate your experience"
                         />
-                      )}
+                        <input
+                          name="customer_feedbackPrompt"
+                          value={form.customer_feedbackPrompt}
+                          onChange={handleChange}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="Tell us more about your experience (optional)"
+                        />
+                        <input
+                          name="customer_feedbackPlaceholder"
+                          value={form.customer_feedbackPlaceholder}
+                          onChange={handleChange}
+                          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="Your feedback..."
+                        />
+                      </div>
+                      <FeedbackForm
+                        customization={customization}
+                        businessId={businessId || undefined}
+                        isPreviewMode={true}
+                        onSuccess={(data) => {
+                          setSubmittedFeedbackForPreview(data);
+                          setPreviewMode("thanks");
+                        }}
+                      />
                     </>
                   )}
 

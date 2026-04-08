@@ -102,9 +102,8 @@ const QRCodeGeneration = () => {
   }
 
   return (
-  // Make the QR tab have a capped height so it doesn't push the whole page;
-  // keep the top area (QR + buttons) visible and let the instructions scroll if needed.
-  <div className="max-w-3xl mx-auto w-full max-h-[520px] flex flex-col">
+  // Let the QR section grow naturally so the portal card encloses all content.
+  <div className="max-w-3xl mx-auto w-full flex flex-col">
       {/* Business Info */}
       <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -124,53 +123,55 @@ const QRCodeGeneration = () => {
         </div>
       </div>
 
-  {/* QR Code Display */}
-  <div className="flex flex-col items-center space-y-6">
-        <div
-          ref={qrRef}
-          className="bg-white p-8 rounded-lg shadow-lg border-2 border-gray-200"
-        >
-          <QRCode
-            value={feedbackUrl}
-            size={256}
-            level="H"
-          />
-        </div>
+      {/* QR code card extends through the full instructions block */}
+      <div className="w-full max-w-lg mx-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg p-6">
+        <div className="flex flex-col items-center space-y-6">
+          <div
+            ref={qrRef}
+            className="bg-white p-8 rounded-lg border border-gray-200"
+          >
+            <QRCode
+              value={feedbackUrl}
+              size={256}
+              level="H"
+            />
+          </div>
 
-        {/* Download Buttons */}
-        <div className="flex gap-4">
-          <BlackButton
-            label="Download PNG"
-            onClick={handleDownloadPNG}
-          />
-          {isPro ? (
-            <button
-              onClick={handleDownloadSVG}
-              className="px-6 py-2 bg-white border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Download SVG
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/pricing")}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-100 border-2 border-gray-200 text-gray-400 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Lock size={14} />
-              SVG (Pro)
-            </button>
-          )}
-        </div>
+          {/* Download Buttons */}
+          <div className="flex gap-4">
+            <BlackButton
+              label="Download PNG"
+              onClick={handleDownloadPNG}
+            />
+            {isPro ? (
+              <button
+                onClick={handleDownloadSVG}
+                className="px-6 py-2 bg-white border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Download SVG
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/pricing")}
+                className="flex items-center gap-2 px-6 py-2 bg-gray-100 border-2 border-gray-200 text-gray-400 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Lock size={14} />
+                SVG (Pro)
+              </button>
+            )}
+          </div>
 
-        {/* Instructions — make this area scrollable if the content is long */}
-        <div className="overflow-auto flex-1 w-full mt-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-w-lg mx-auto">
-          <h4 className="font-semibold text-gray-900 mb-2">How to use:</h4>
-          <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-            <li>Download the QR code (PNG for printing, SVG for digital use)</li>
-            <li>Print and display at your location (tables, counter, receipts)</li>
-            <li>Customers scan with their phone camera</li>
-            <li>They're redirected to leave feedback and claim their reward</li>
-          </ol>
+          {/* Instructions */}
+          <div className="w-full">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-2">How to use:</h4>
+              <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                <li>Download the QR code (PNG for printing, SVG for digital use)</li>
+                <li>Print and display at your location (tables, counter, receipts)</li>
+                <li>Customers scan with their phone camera</li>
+                <li>They're redirected to leave feedback and claim their reward</li>
+              </ol>
+            </div>
           </div>
         </div>
       </div>

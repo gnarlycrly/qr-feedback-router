@@ -1,6 +1,6 @@
-import { Gift, Building, QrCode, MessageCircle } from "lucide-react";
+import { Gift, Building, QrCode, MessageCircle, CircleHelp } from "lucide-react";
 
-type Tab = "rewards" | "business" | "qr" | "reviews";
+type Tab = "rewards" | "business" | "qr" | "reviews" | "help";
 
 type BusinessNavProps = {
   activeTab: Tab;
@@ -34,6 +34,12 @@ const BusinessNav = ({ activeTab, onTabChange }: BusinessNavProps) => {
           icon={<MessageCircle size={18} />}
           active={activeTab === "reviews"}
           onClick={() => onTabChange("reviews")}
+        />
+        <NavButton
+          label="Help"
+          icon={<CircleHelp size={18} />}
+          active={activeTab === "help"}
+          onClick={() => onTabChange("help")}
         />
       </div>
     </nav>

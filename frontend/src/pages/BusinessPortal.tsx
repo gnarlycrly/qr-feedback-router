@@ -6,6 +6,7 @@ import BusinessEdit from "./BusinessEdit";
 import InfoTooltip from "../components/InfoTooltip";
 import QRCodeGeneration from "./QRCodeGeneration";
 import CustomerServiceDashboardPage from "./CustomerServiceDashboardPage";
+import HelpSupportPage from "./HelpSupportPage";
 import BusinessNav from "../components/BusinessNav";
 import { useSubscription } from "../firebaseHelpers/useSubscription";
 import { useRewards } from "../firebaseHelpers/useRewards";
@@ -18,16 +19,16 @@ const BusinessPortal = () => {
     try {
       const params = new URLSearchParams(location.search);
       const tab = params.get("tab");
-      if (tab === "rewards" || tab === "business" || tab === "qr" || tab === "reviews") return tab as any;
+      if (tab === "rewards" || tab === "business" || tab === "qr" || tab === "reviews" || tab === "help") return tab as any;
       const stateTab = (location.state as any)?.tab;
-      if (stateTab === "rewards" || stateTab === "business" || stateTab === "qr" || stateTab === "reviews") return stateTab as any;
+      if (stateTab === "rewards" || stateTab === "business" || stateTab === "qr" || stateTab === "reviews" || stateTab === "help") return stateTab as any;
     } catch (e) {
       // ignore
     }
     return "rewards";
   };
 
-  const [activeTab, setActiveTab] = useState<"rewards" | "business" | "qr" | "reviews">(getInitialTab());
+  const [activeTab, setActiveTab] = useState<"rewards" | "business" | "qr" | "reviews" | "help">(getInitialTab());
   const [showAddRewardWindow, setShowAddRewardWindow] = useState(false);
   const { isPro } = useSubscription();
   const { businessId } = useAuth();
@@ -39,12 +40,12 @@ const BusinessPortal = () => {
       <BusinessNav activeTab={activeTab} onTabChange={setActiveTab} />
       
       <div>
-  <main className={"rounded-2xl shadow-lg border border-gray-100 bg-white " + (activeTab === "reviews" ? "pt-0 pb-6 px-6" : "p-6")}>
+  <main className={"rounded-2xl shadow-lg border border-gray-100 bg-white " + (activeTab === "reviews" || activeTab === "help" ? "pt-0 pb-6 px-6" : "p-6")}>
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="text-left">
-                {activeTab !== "reviews" && (
+                {activeTab !== "reviews" && activeTab !== "help" && (
                   <>
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">
                       {activeTab === "rewards" ? "Reward Management" :
@@ -107,6 +108,14 @@ const BusinessPortal = () => {
                 <div className="w-full max-w-3xl mx-auto">
                   <div className="rounded-2xl bg-white p-6 shadow-lg">
                     <CustomerServiceDashboardPage />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "help" && (
+                <div className="w-full max-w-3xl mx-auto">
+                  <div className="rounded-2xl bg-white p-6 shadow-lg">
+                    <HelpSupportPage />
                   </div>
                 </div>
               )}

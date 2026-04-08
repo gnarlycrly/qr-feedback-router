@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import RatingStars from "./RatingStars";
-import type { SurveyQuestion } from "../firebaseHelpers/useBusinessData";
 
 type FormCustomization = {
   customer_businessName: string;
@@ -12,36 +11,38 @@ type FormCustomization = {
   customer_headerText: string;
   customer_ratingPrompt: string;
   customer_feedbackPrompt: string;
+  customer_feedbackPlaceholder: string;
   customer_submitButtonText: string;
 };
 
 interface FeedbackFormProps {
   customization?: FormCustomization;
   businessId?: string;
-  customSurveyQuestions?: SurveyQuestion[];
   isPreviewMode?: boolean;
-  onQuestionUpdate?: (id: string, question: string) => void;
   // optional path to navigate to after successful submit (e.g. reward page)
   successPath?: string;
   // optional callback to run after successful submit (preferred over successPath)
   onSuccess?: (feedbackData: { rating: number; comment: string }) => void;
 }
 
-export default function FeedbackForm({ customization, businessId, customSurveyQuestions = [], isPreviewMode = false, onQuestionUpdate, successPath, onSuccess }: FeedbackFormProps) {
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+const generateRewardCode = () => {
+  const part = () =>
+    Array.from({ length: 4 }, () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]).join("");
+  return `${part()}-${part()}`;
+};
+
+export default function FeedbackForm({ customization, businessId, isPreviewMode = false, successPath, onSuccess }: FeedbackFormProps) {
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
-  const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | number | string[]>>({});
   const [effectiveCustomization, setEffectiveCustomization] = useState<FormCustomization | undefined>(customization);
-  const [effectiveSurveyQuestions, setEffectiveSurveyQuestions] = useState<SurveyQuestion[]>(customSurveyQuestions);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (customization) {
       setEffectiveCustomization(customization);
-    }
-    if (customSurveyQuestions && customSurveyQuestions.length > 0) {
-      setEffectiveSurveyQuestions(customSurveyQuestions);
     }
 
     // If businessId is provided, fetch business data from Firestore
@@ -56,16 +57,12 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
               customer_primaryColor: businessData.customer_primaryColor || "#1A3673",
               customer_accentColor: businessData.customer_accentColor || "#2563eb",
               customer_headerText: businessData.customer_headerText || "How was your experience?",
-              customer_ratingPrompt: businessData.customer_ratingPrompt|| "Rate your experience",
+              customer_ratingPrompt: businessData.customer_ratingPrompt || "Rate your experience",
               customer_feedbackPrompt: businessData.customer_feedbackPrompt || "Tell us more about your experience (optional)",
+              customer_feedbackPlaceholder: businessData.customer_feedbackPlaceholder || "Your feedback...",
               customer_submitButtonText: businessData.customer_submitButtonText || "Submit review",
             };
             setEffectiveCustomization(merged);
-            
-            // Load custom survey questions from business data
-            if (businessData.customSurveyQuestions && businessData.customSurveyQuestions.length > 0) {
-              setEffectiveSurveyQuestions(businessData.customSurveyQuestions);
-            }
             return;
           }
         } catch (e) {
@@ -93,6 +90,7 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
           customer_headerText: fromForm?.headerText || "How was your experience?",
           customer_ratingPrompt: fromForm?.ratingPrompt || "Rate your experience",
           customer_feedbackPrompt: fromForm?.feedbackPrompt || "Tell us more about your experience (optional)",
+          customer_feedbackPlaceholder: fromForm?.feedbackPlaceholder || "Your feedback...",
           customer_submitButtonText: fromForm?.submitButtonText || "Submit review",
         };
 
@@ -101,25 +99,53 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
         setEffectiveCustomization(undefined);
       }
     }
-  }, [customization, businessId, customSurveyQuestions]);
+  }, [customization, businessId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (loading) return; // Prevent double submission
+    if (rating === 0) {
+      alert("Please select a star rating before submitting.");
+      return;
+    }
     setLoading(true);
 
     try {
       // Save feedback to Firestore if businessId is provided
+      let issuedRewardId: string | null = null;
+      let issuedRewardCode: string | null = null;
+
       if (businessId) {
-        await addDoc(collection(db, "feedback"), {
+        const feedbackRef = await addDoc(collection(db, "feedback"), {
           businessId,
           businessName: effectiveCustomization?.customer_businessName || "Sample Business",
           rating,
           comments,
-          surveyAnswers,
           createdAt: serverTimestamp(),
         });
+
+        // Reward issuance is best-effort and should never block feedback submission.
+        try {
+          issuedRewardCode = generateRewardCode();
+          const issuedRef = await addDoc(collection(db, "issuedRewards"), {
+            businessId,
+            feedbackId: feedbackRef.id,
+            code: issuedRewardCode,
+            status: "issued",
+            issuedAt: serverTimestamp(),
+            redeemedAt: null,
+            redeemedBy: null,
+            rewardTitle: null,
+            rewardDescription: null,
+          });
+          issuedRewardId = issuedRef.id;
+        } catch (rewardError) {
+          console.error("Reward issuance failed (feedback still submitted):", rewardError);
+          issuedRewardCode = null;
+          issuedRewardId = null;
+        }
+
         console.log("Feedback saved to Firestore");
       } else {
         // Just log for preview mode
@@ -140,7 +166,6 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
       // reset form (you can remove this if you don't want auto clear)
       setRating(0);
       setComments("");
-      setSurveyAnswers({});
 
       // If parent provided an onSuccess callback, call it with feedback data. Otherwise navigate in-app to reward.
       if (onSuccess) {
@@ -148,9 +173,20 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
         return;
       }
 
-  const target = successPath ?? "/reward?fromFeedback=1&guest=1";
-  // SPA navigation preserves routing state; include businessId and feedback so RewardPage can render the real submitted review.
-  navigate(target, { state: { fromFeedback: true, businessId, feedback: submittedFeedback } });
+      const target = successPath ?? "/reward?fromFeedback=1&guest=1";
+      // SPA navigation preserves routing state; include businessId, feedback, and issued reward metadata for the thank-you page.
+      const targetWithRewardId = issuedRewardId
+        ? `${target}${target.includes("?") ? "&" : "?"}rid=${issuedRewardId}`
+        : target;
+      navigate(targetWithRewardId, {
+        state: {
+          fromFeedback: true,
+          businessId,
+          feedback: submittedFeedback,
+          issuedRewardId,
+          issuedRewardCode,
+        },
+      });
     } catch (error) {
       console.error("Error submitting feedback:", error);
       alert("Failed to submit feedback. Please try again.");
@@ -192,71 +228,12 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
           </label>
           <textarea
             className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[100px] transition-all duration-200 resize-none"
-            placeholder="Your feedback..."
+            placeholder={effectiveCustomization?.customer_feedbackPlaceholder || "Your feedback..."}
             value={comments}
             onChange={isPreviewMode ? () => {} : (e) => setComments(e.target.value)}
             disabled={isPreviewMode}
           />
         </div>
-
-        {/* Custom Survey Questions */}
-        {effectiveSurveyQuestions && effectiveSurveyQuestions.length > 0 && effectiveSurveyQuestions.map((question) => (
-          <div key={question.id} className="text-left">
-            {isPreviewMode ? (
-              <input
-                type="text"
-                value={question.question}
-                onChange={(e) => onQuestionUpdate?.(question.id, e.target.value)}
-                className="block w-full text-sm font-semibold text-gray-700 mb-3 px-2 py-1 border border-transparent hover:border-gray-300 focus:border-blue-500 rounded transition-colors bg-transparent"
-                placeholder="Click to edit question..."
-              />
-            ) : (
-              question.question && (
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  {question.question}
-                </label>
-              )
-            )}
-            {question.type === "rating" ? (
-              <div className="flex justify-center">
-                <RatingStars 
-                  value={surveyAnswers[question.id] as number || 0} 
-                  onChange={isPreviewMode ? () => {} : (val) => setSurveyAnswers({...surveyAnswers, [question.id]: val})} 
-                />
-              </div>
-            ) : question.type === "checkbox" ? (
-              <div className="space-y-2">
-                {question.options?.map((option, index) => (
-                  <label key={index} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={Array.isArray(surveyAnswers[question.id]) ? (surveyAnswers[question.id] as string[]).includes(option) : false}
-                      onChange={isPreviewMode ? () => {} : (e) => {
-                        const currentVal = surveyAnswers[question.id];
-                        const current = Array.isArray(currentVal) ? currentVal.slice() : [];
-                        const updated = e.target.checked
-                          ? [...current, option]
-                          : current.filter(v => v !== option);
-                        setSurveyAnswers({...surveyAnswers, [question.id]: updated});
-                      }}
-                      disabled={isPreviewMode}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
-                    <span className="text-sm text-gray-700">{option}</span>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <textarea
-                className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[100px] transition-all duration-200 resize-none"
-                placeholder="Your answer..."
-                value={surveyAnswers[question.id] as string || ""}
-                onChange={isPreviewMode ? () => {} : (e) => setSurveyAnswers({...surveyAnswers, [question.id]: e.target.value})}
-                disabled={isPreviewMode}
-              />
-            )}
-          </div>
-        ))}
 
         {/* Submit button */}
         <button

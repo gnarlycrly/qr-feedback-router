@@ -1,11 +1,13 @@
 import RewardCard from "../components/RewardCard";
 import RewardAddWindow from "./RewardAddWindow";
+import RedemptionsPage from "./RedemptionsPage";
 
 import { type Reward } from "../components/RewardType";
 import { useRewards } from "../firebaseHelpers/useRewards";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useSubscription } from "../firebaseHelpers/useSubscription";
 import UpgradeBanner from "../components/UpgradeBanner";
+import { useState } from "react";
 
 type RewardManagementProps = {
   showAddWindow: boolean;
@@ -17,6 +19,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   const { rewards, setRewards, saveRewards } = useRewards(businessId);
   const { isPro } = useSubscription();
   const canAddReward = isPro || rewards.length < 1;
+  const [view, setView] = useState<"rewards" | "redemptions">("rewards");
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
     const reward: Reward = {
@@ -55,26 +58,52 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
     // Make the rewards tab take up most of the viewport by default and keep
     // the tab size stable. The list itself will scroll internally.
     <div className="max-w-3xl mx-auto w-full max-h-[calc(100vh-220px)] flex flex-col">
-      <div className="overflow-auto flex-1 space-y-4 pb-4">
-        {rewards.map((reward) => (
-          <RewardCard
-            key={reward.id}
-            reward={reward}
-            onToggleActive={toggleRewardActive}
-            onDelete={deleteReward}
-          />
-        ))}
+      <div className="mb-3 flex justify-end">
+        {view === "rewards" ? (
+          <button
+            onClick={() => setView("redemptions")}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+          >
+            View Redemptions
+          </button>
+        ) : (
+          <button
+            onClick={() => setView("rewards")}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+          >
+            Back to Rewards
+          </button>
+        )}
       </div>
 
-      {!canAddReward && (
-        <UpgradeBanner feature="Unlimited Rewards" />
-      )}
+      {view === "rewards" ? (
+        <>
+          <div className="overflow-auto flex-1 space-y-4 pb-4">
+            {rewards.map((reward) => (
+              <RewardCard
+                key={reward.id}
+                reward={reward}
+                onToggleActive={toggleRewardActive}
+                onDelete={deleteReward}
+              />
+            ))}
+          </div>
 
-      <RewardAddWindow
-        isOpen={showAddWindow && canAddReward}
-        onClose={() => setShowAddWindow(false)}
-        onSubmit={addReward}
-      />
+          {!canAddReward && (
+            <UpgradeBanner feature="Unlimited Rewards" />
+          )}
+
+          <RewardAddWindow
+            isOpen={showAddWindow && canAddReward}
+            onClose={() => setShowAddWindow(false)}
+            onSubmit={addReward}
+          />
+        </>
+      ) : (
+        <div className="overflow-auto flex-1 pb-2">
+          <RedemptionsPage businessId={businessId} />
+        </div>
+      )}
     </div>
   );
 };
