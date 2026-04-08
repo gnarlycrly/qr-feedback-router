@@ -177,6 +177,28 @@ export default function FeedbackForm({ customization, businessId, customSurveyQu
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
+        {/* Main Rating */}
+        <div className="text-center">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            {effectiveCustomization?.customer_ratingPrompt || "Rate your experience"}
+          </label>
+          <RatingStars value={rating} onChange={isPreviewMode ? () => {} : setRating} />
+        </div>
+
+        {/* Comments */}
+        <div className="text-left">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            {effectiveCustomization?.customer_feedbackPrompt || "Tell us more about your experience (optional)"}
+          </label>
+          <textarea
+            className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 text-base p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[100px] transition-all duration-200 resize-none"
+            placeholder="Your feedback..."
+            value={comments}
+            onChange={isPreviewMode ? () => {} : (e) => setComments(e.target.value)}
+            disabled={isPreviewMode}
+          />
+        </div>
+
         {/* Custom Survey Questions */}
         {effectiveSurveyQuestions && effectiveSurveyQuestions.length > 0 && effectiveSurveyQuestions.map((question) => (
           <div key={question.id} className="text-left">
