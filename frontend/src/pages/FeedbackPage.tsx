@@ -46,9 +46,25 @@ export default function FeedbackPage() {
       <div className="flex-1 flex flex-col justify-center items-center px-4 py-4 pb-10">
         <FeedbackForm
           businessId={businessId || undefined}
-          onSuccess={(feedbackData) => navigate(`${next}?fromFeedback=1&guest=1&business=${businessId || ''}`, {
-            state: { fromFeedback: true, businessId, feedback: feedbackData }
-          })}
+          onSuccess={(result) => {
+            const params = new URLSearchParams({
+              fromFeedback: "1",
+              guest: "1",
+              business: result.businessId ?? businessId ?? "",
+            });
+            if (result.issuedRewardId) {
+              params.set("rid", result.issuedRewardId);
+            }
+            navigate(`${next}?${params.toString()}`, {
+              state: {
+                fromFeedback: true,
+                businessId: result.businessId ?? businessId ?? null,
+                feedback: result.feedback,
+                issuedRewardId: result.issuedRewardId,
+                issuedRewardCode: result.issuedRewardCode,
+              },
+            });
+          }}
         />
       </div>
 

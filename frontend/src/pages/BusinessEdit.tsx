@@ -391,8 +391,8 @@ const BusinessEdit: React.FC = () => {
                         customization={customization}
                         businessId={businessId || undefined}
                         isPreviewMode={true}
-                        onSuccess={(data) => {
-                          setSubmittedFeedbackForPreview(data);
+                        onSuccess={(result) => {
+                          setSubmittedFeedbackForPreview(result.feedback);
                           setPreviewMode("thanks");
                         }}
                       />

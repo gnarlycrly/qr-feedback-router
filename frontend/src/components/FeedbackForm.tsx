@@ -22,10 +22,22 @@ interface FeedbackFormProps {
   // optional path to navigate to after successful submit (e.g. reward page)
   successPath?: string;
   // optional callback to run after successful submit (preferred over successPath)
-  onSuccess?: (feedbackData: { rating: number; comment: string }) => void;
+  onSuccess?: (result: FeedbackSubmitResult) => void;
 }
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+export type FeedbackSnapshot = {
+  rating: number;
+  comment: string;
+};
+
+export type FeedbackSubmitResult = {
+  feedback: FeedbackSnapshot;
+  businessId: string | null;
+  issuedRewardId: string | null;
+  issuedRewardCode: string | null;
+};
 
 const generateRewardCode = () => {
   const part = () =>
@@ -158,7 +170,7 @@ export default function FeedbackForm({ customization, businessId, isPreviewMode 
       }
 
       // Create feedback data object to pass to parent
-      const submittedFeedback = {
+      const submittedFeedback: FeedbackSnapshot = {
         rating,
         comment: comments,
       };
@@ -169,7 +181,12 @@ export default function FeedbackForm({ customization, businessId, isPreviewMode 
 
       // If parent provided an onSuccess callback, call it with feedback data. Otherwise navigate in-app to reward.
       if (onSuccess) {
-        onSuccess(submittedFeedback);
+        onSuccess({
+          feedback: submittedFeedback,
+          businessId: businessId ?? null,
+          issuedRewardId,
+          issuedRewardCode,
+        });
         return;
       }
 
