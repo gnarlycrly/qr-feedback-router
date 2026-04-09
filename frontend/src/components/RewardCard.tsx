@@ -6,14 +6,18 @@ type RewardCardProps = {
   reward: Reward;
   onToggleActive: (id: number) => void;
   onDelete?: (id: number) => void;
+  /** Codes issued for this reward title (matched to snapshot rewardTitle). */
+  redemptionCounts?: { issued: number; redeemed: number };
 };
 
-const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelete }) => {
+const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelete, redemptionCounts }) => {
+  const issued = redemptionCounts?.issued ?? 0;
+  const redeemed = redemptionCounts?.redeemed ?? 0;
   const [showConfirm, setShowConfirm] = useState(false);
   return (
     <GrayContainer className="flex justify-between items-start">
       <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
           <h3 className="font-semibold text-gray-800">{reward.title}</h3>
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -21,6 +25,9 @@ const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelet
             }`}
           >
             {reward.active ? "Active" : "Inactive"}
+          </span>
+          <span className="text-xs text-gray-500 tabular-nums" title="Based on codes issued for this reward title">
+            {issued} issued · {redeemed} redeemed
           </span>
         </div>
         <p className="text-sm text-gray-600">{reward.description}</p>

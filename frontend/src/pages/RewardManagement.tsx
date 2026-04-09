@@ -7,7 +7,9 @@ import { useRewards } from "../firebaseHelpers/useRewards";
 import { useAuth } from "../firebaseHelpers/AuthContext";
 import { useSubscription } from "../firebaseHelpers/useSubscription";
 import UpgradeBanner from "../components/UpgradeBanner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 type RewardManagementProps = {
   showAddWindow: boolean;
@@ -20,6 +22,45 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   const { isPro } = useSubscription();
   const canAddReward = isPro || rewards.length < 1;
   const [view, setView] = useState<"rewards" | "redemptions">("rewards");
+  /** Keyed by trimmed rewardTitle from issuedRewards (matches reward.title at issuance). */
+  const [redemptionStatsByTitle, setRedemptionStatsByTitle] = useState<
+    Record<string, { issued: number; redeemed: number }>
+  >({});
+
+  useEffect(() => {
+    if (!businessId || view !== "rewards") return;
+
+    const loadStats = async () => {
+      try {
+        const q = query(collection(db, "issuedRewards"), where("businessId", "==", businessId));
+        const snap = await getDocs(q);
+        const byTitle: Record<string, { issued: number; redeemed: number }> = {};
+
+        snap.forEach((docSnap) => {
+          const data = docSnap.data() as {
+            rewardTitle?: string | null;
+            status?: string;
+          };
+          const title = (data.rewardTitle ?? "").trim();
+          if (!title || title === "No active reward") return;
+
+          if (!byTitle[title]) {
+            byTitle[title] = { issued: 0, redeemed: 0 };
+          }
+          byTitle[title].issued += 1;
+          if (data.status === "redeemed") {
+            byTitle[title].redeemed += 1;
+          }
+        });
+
+        setRedemptionStatsByTitle(byTitle);
+      } catch (e) {
+        console.error("Failed to load redemption stats for rewards:", e);
+      }
+    };
+
+    void loadStats();
+  }, [businessId, view]);
 
   const addReward = (newReward: Omit<Reward, "id" | "active">) => {
     const reward: Reward = {
@@ -85,6 +126,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
                 reward={reward}
                 onToggleActive={toggleRewardActive}
                 onDelete={deleteReward}
+                redemptionCounts={redemptionStatsByTitle[reward.title.trim()] ?? { issued: 0, redeemed: 0 }}
               />
             ))}
           </div>

@@ -139,6 +139,26 @@ export default function FeedbackForm({ customization, businessId, isPreviewMode 
 
         // Reward issuance is best-effort and should never block feedback submission.
         try {
+          let rewardTitle = "No active reward";
+          let rewardDescription: string | null = null;
+          try {
+            const businessSnap = await getDoc(doc(db, "businesses", businessId));
+            if (businessSnap.exists()) {
+              const data = businessSnap.data();
+              const rewards: any[] = Array.isArray(data.rewards) ? data.rewards : [];
+              const active = rewards.find((r: any) => r?.active);
+              if (active) {
+                const title = typeof active.title === "string" ? active.title.trim() : "";
+                rewardTitle = title || "";
+                const desc = active.value ?? active.description;
+                rewardDescription =
+                  typeof desc === "string" && desc.trim() ? desc.trim() : null;
+              }
+            }
+          } catch (snapshotError) {
+            console.error("Could not load business for reward snapshot:", snapshotError);
+          }
+
           issuedRewardCode = generateRewardCode();
           const issuedRef = await addDoc(collection(db, "issuedRewards"), {
             businessId,
@@ -148,8 +168,8 @@ export default function FeedbackForm({ customization, businessId, isPreviewMode 
             issuedAt: serverTimestamp(),
             redeemedAt: null,
             redeemedBy: null,
-            rewardTitle: null,
-            rewardDescription: null,
+            rewardTitle,
+            rewardDescription,
           });
           issuedRewardId = issuedRef.id;
         } catch (rewardError) {
