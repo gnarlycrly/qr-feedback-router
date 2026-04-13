@@ -26,7 +26,7 @@ def test_cors_credentials_header_inclusion(client):
     """Verify that if we expose CORS, we handle credentials configurations"""
     response = client.options('/')
     if response.status_code == 200:
-        assert 'Access-Control-Allow-Methods' in response.headers
+        assert 'Access-Control-Allow-Origin' in response.headers
 
 def test_invalid_http_put_method(client):
     """A PUT on a basic route should properly yield a 405 Method Not Allowed"""
