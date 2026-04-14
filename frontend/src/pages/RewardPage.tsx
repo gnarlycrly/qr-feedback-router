@@ -82,6 +82,9 @@ const RewardContent = ({
   codeToShow,
   rewardData,
   primaryColor,
+  phoneNumber,
+  websiteUrl,
+  hasActiveReward,
 }: {
   copied: boolean;
   onCopy: () => Promise<void>;
@@ -93,6 +96,9 @@ const RewardContent = ({
   codeToShow?: string;
   rewardData: RewardDetails;
   primaryColor?: string;
+  phoneNumber?: string;
+  websiteUrl?: string;
+  hasActiveReward: boolean;
 }) => {
   const renderStars = (rating: number) => (
     <div className="flex items-center gap-2" aria-label={`Rated ${rating} out of ${ratingScale}`}>
@@ -142,9 +148,10 @@ const RewardContent = ({
         )}
 
         <p className="mt-6 text-center text-sm leading-relaxed text-slate-600">
-          We truly appreciate you taking the time to share your experience with <span className="font-semibold text-slate-800">{rewardData.businessName}</span>. Enjoy this thank-you offer on us!
+          We truly appreciate you taking the time to share your experience with <span className="font-semibold text-slate-800">{rewardData.businessName}</span>.{hasActiveReward ? " Enjoy this thank-you offer on us!" : ""}
         </p>
 
+  {hasActiveReward && (
   <section className="mt-8 rounded-2xl bg-linear-to-br from-indigo-50 to-violet-50 p-6">
           <div className="flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
@@ -214,9 +221,22 @@ const RewardContent = ({
               </div>
             </div>
         </section>
+  )}
 
         <footer className="mt-8 text-center">
           <p className="text-sm text-slate-500">We look forward to serving you again soon!</p>
+          {(phoneNumber || websiteUrl) && (
+            <div className="mt-2 text-base text-slate-900 space-y-1">
+              {phoneNumber && <p>{phoneNumber}</p>}
+              {websiteUrl && (
+                <p>
+                  <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {websiteUrl}
+                  </a>
+                </p>
+              )}
+            </div>
+          )}
         </footer>
       </div>
     </article>
@@ -228,6 +248,8 @@ function RewardPage() {
   const [businessName, setBusinessName] = useState<string>(mockRewardData.businessName);
   const [liveReward, setLiveReward] = useState<RewardDetails["reward"] | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
+  const [phoneNumber, setPhoneNumber] = useState<string | undefined>(undefined);
+  const [websiteUrl, setWebsiteUrl] = useState<string | undefined>(undefined);
   const [issuedRewardId, setIssuedRewardId] = useState<string | null>(null);
   const [issuedRewardCode, setIssuedRewardCode] = useState<string | null>(null);
   const [showRedeemPanel, setShowRedeemPanel] = useState(false);
@@ -290,6 +312,8 @@ function RewardPage() {
             const data = businessDoc.data();
             setBusinessName(data.name || mockRewardData.businessName);
             setPrimaryColor((data as any).customer_primaryColor || undefined);
+            setPhoneNumber(data.phone_number || undefined);
+            setWebsiteUrl(data.website_url || undefined);
 
             // Find an active reward
             const rewards: any[] = data.rewards || [];
@@ -303,6 +327,8 @@ function RewardPage() {
                 validityDays: 30,
                 terms: `Valid for 30 days. Max ${activeReward.maxRedemptions} redemptions.`,
               });
+            } else {
+              setLiveReward(null);
             }
           }
         } catch (error) {
@@ -319,13 +345,13 @@ function RewardPage() {
       comment: feedbackData.comment ?? "",
     },
     businessName: businessName,
-    reward: {
-      ...(liveReward ?? mockRewardData.reward),
-      promoCode: isCustomer ? (issuedRewardCode ?? undefined) : (issuedRewardCode ?? (liveReward ?? mockRewardData.reward).promoCode),
+    reward: liveReward ? {
+      ...liveReward,
+      promoCode: isCustomer ? (issuedRewardCode ?? undefined) : (issuedRewardCode ?? liveReward.promoCode),
       terms: redeemed
         ? "This reward has been redeemed."
-        : (liveReward ?? mockRewardData.reward).terms,
-    },
+        : liveReward.terms,
+    } : mockRewardData.reward,
   };
 
   const handleCopyCode = async () => {
@@ -374,6 +400,9 @@ function RewardPage() {
         codeToShow={codeToShow}
         rewardData={rewardData}
         primaryColor={primaryColor}
+        phoneNumber={phoneNumber}
+        websiteUrl={websiteUrl}
+        hasActiveReward={liveReward !== null}
       />
     </RewardLayout>
   );

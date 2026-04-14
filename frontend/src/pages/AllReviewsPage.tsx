@@ -136,8 +136,8 @@ export default function AllReviewsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <main className="rounded-2xl shadow-lg border border-gray-100 bg-gray-50">
-  <div className="max-w-3xl mx-auto w-full h-[calc(100vh-220px)] flex flex-col bg-white rounded-2xl p-6 overflow-hidden">
+      <main className="rounded-2xl shadow-lg border border-gray-100 bg-gray-50 overflow-visible">
+  <div className="max-w-3xl mx-auto w-full h-[calc(100vh-220px)] flex flex-col bg-white rounded-2xl p-6">
           <div className="flex items-center justify-between py-4">
             <div>
               <h1 className="text-2xl font-bold">All Customer Reviews</h1>
@@ -160,13 +160,13 @@ export default function AllReviewsPage() {
                 </button>
 
                 {isRangeMenuOpen && (
-                  <div className="absolute right-0 top-full z-10 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                  <div className="absolute right-0 bottom-full z-10 mb-2 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
                     <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Choose range</p>
                     <ul className="space-y-1">
                       {rangeOptions.map((option) => {
                         const locked = !isPro && option !== "Last 7 days";
                         return (
-                        <li key={option}>
+                        <li key={option} className="relative group">
                           <button
                             type="button"
                             onClick={() => handleSelectRange(option)}
@@ -203,7 +203,7 @@ export default function AllReviewsPage() {
           </div>
 
           {/* Star filters: choose any combination of 1-5 to filter results */}
-          <div className="pt-2 flex flex-col flex-1 min-h-0">
+          <div className="pt-2 flex flex-col flex-1 min-h-0 overflow-visible">
             <div className="w-full flex flex-col items-center gap-3">
               <p className="text-sm font-medium text-gray-700">Filter by rating:</p>
               <div className="w-full flex items-center justify-center gap-3 overflow-x-auto">
@@ -242,7 +242,7 @@ export default function AllReviewsPage() {
               </div>
             </div>
 
-            <div className="w-full overflow-auto flex-1 space-y-3 pb-6 min-h-0">
+            <div className="w-full overflow-y-auto flex-1 space-y-3 pb-6 min-h-0 mt-4">
               {(() => {
                 const filtered = reviews.filter((r) => {
                   if (selectedStars.size === 0) return true;

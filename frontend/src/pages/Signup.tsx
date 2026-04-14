@@ -96,7 +96,7 @@ export default function Signup() {
   // Two-step layout: first credentials, then business details
   return (
     <div className="min-h-screen w-full bg-[#ffb133] flex items-center justify-center py-12 px-4">
-  <div className="w-full max-w-xl lg:max-w-2xl p-10 rounded-2xl shadow-2xl ring-1 ring-black/5 bg-white/95 max-h-[calc(100vh-6rem)] overflow-auto flex flex-col">
+  <div className="w-full max-w-xl lg:max-w-2xl p-10 rounded-2xl shadow-2xl ring-1 ring-black/5 bg-white/95 max-h-[calc(100vh-6rem)] overflow-y-auto flex flex-col">
         <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-4 mb-4" aria-hidden>
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.12))' }}>
@@ -113,7 +113,7 @@ export default function Signup() {
           <p className="text-gray-600">Create your StarBoard account</p>
         </div>
 
-  <form className="flex flex-col gap-5 overflow-auto min-h-0" onSubmit={(e) => { e.preventDefault(); handleCompleteSetup(); }}>
+  <form className="flex flex-col gap-5 overflow-y-auto min-h-0" onSubmit={(e) => { e.preventDefault(); handleCompleteSetup(); }}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>
           )}

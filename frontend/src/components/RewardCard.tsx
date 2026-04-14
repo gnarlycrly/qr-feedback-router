@@ -1,4 +1,3 @@
-import { useState } from "react";
 import GrayContainer from "./GrayContainer";
 import {type Reward} from "../components/RewardType";
 
@@ -8,12 +7,14 @@ type RewardCardProps = {
   onDelete?: (id: number) => void;
   /** Codes issued for this reward title (matched to snapshot rewardTitle). */
   redemptionCounts?: { issued: number; redeemed: number };
+  showConfirm?: boolean;
+  onShowConfirm?: () => void;
+  onHideConfirm?: () => void;
 };
 
-const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelete, redemptionCounts }) => {
+const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelete, redemptionCounts, showConfirm = false, onShowConfirm, onHideConfirm }) => {
   const issued = redemptionCounts?.issued ?? 0;
   const redeemed = redemptionCounts?.redeemed ?? 0;
-  const [showConfirm, setShowConfirm] = useState(false);
   return (
     <GrayContainer className="flex justify-between items-start">
       <div className="flex-1">
@@ -39,7 +40,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelet
         {onDelete && (
           <div className="relative">
             <button
-              onClick={() => setShowConfirm(true)}
+              onClick={onShowConfirm}
               aria-label="Delete reward"
               className="text-sm text-red-600 hover:text-red-800"
             >
@@ -48,19 +49,16 @@ const RewardCard: React.FC<RewardCardProps> = ({ reward, onToggleActive, onDelet
 
             {showConfirm && (
               <div className="absolute right-0 z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-                <p className="text-sm text-gray-700">Delete reward "{reward.title}"? This cannot be undone.</p>
+                <p className="text-sm text-gray-700">Delete reward? This cannot be undone.</p>
                 <div className="mt-3 flex justify-end gap-2">
                   <button
-                    onClick={() => setShowConfirm(false)}
+                    onClick={onHideConfirm}
                     className="rounded-md px-3 py-1 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      onDelete(reward.id);
-                      setShowConfirm(false);
-                    }}
+                    onClick={() => onDelete(reward.id)}
                     className="rounded-md px-3 py-1 text-sm bg-red-600 text-white hover:bg-red-700"
                   >
                     Delete reward

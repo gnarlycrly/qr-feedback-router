@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Star as StarIcon,
   X,
+  TrendingUp,
 } from "lucide-react";
 import { collection, query, where, orderBy, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useAuth } from "../firebaseHelpers/AuthContext";
@@ -28,6 +29,7 @@ type RawReview = {
   message: string;
   timestamp: string;
   isOlderThanWeek: boolean;
+  createdAt?: Date;
 };
 
 type Review = RawReview & {
@@ -175,6 +177,7 @@ function CustomerServiceDashboardPage() {
           message: data.comments || "No comment provided",
           timestamp: createdAt ? getTimeAgo(createdAt) : "Just now",
           isOlderThanWeek,
+          createdAt,
         });
       });
 
@@ -208,6 +211,50 @@ function CustomerServiceDashboardPage() {
       avgRating: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
     };
   }, [rawReviews]);
+
+  // Generate time-series data for graphs
+  const chartData = useMemo(() => {
+    if (rawReviews.length === 0) return { labels: [], avgRatings: [], totalReviews: [] };
+
+    const filterDate = getDateRangeFilter(selectedRange);
+    const now = new Date();
+    const startDate = filterDate || new Date(Math.min(...rawReviews.map(r => r.createdAt?.getTime() || Date.now())));
+    
+    // Determine number of data points based on range
+    let numPoints = 7;
+    if (selectedRange === "Last 30 days") numPoints = 10;
+    else if (selectedRange === "Quarter to date") numPoints = 12;
+    else if (selectedRange === "Show all reviews") numPoints = 12;
+
+    const timeSpan = now.getTime() - startDate.getTime();
+    const interval = timeSpan / numPoints;
+
+    const labels: string[] = [];
+    const avgRatings: number[] = [];
+    const totalReviews: number[] = [];
+
+    for (let i = 0; i <= numPoints; i++) {
+      const pointTime = new Date(startDate.getTime() + interval * i);
+      const nextPointTime = new Date(startDate.getTime() + interval * (i + 1));
+      
+      // Filter reviews in this time bucket
+      const reviewsInBucket = rawReviews.filter(r => {
+        if (!r.createdAt) return false;
+        return r.createdAt >= pointTime && r.createdAt < nextPointTime;
+      });
+
+      // Calculate average rating for this bucket
+      const bucketTotal = reviewsInBucket.length;
+      const bucketSum = reviewsInBucket.reduce((acc, r) => acc + r.rating, 0);
+      const bucketAvg = bucketTotal > 0 ? bucketSum / bucketTotal : 0;
+
+      labels.push(pointTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      avgRatings.push(bucketAvg);
+      totalReviews.push(bucketTotal);
+    }
+
+    return { labels, avgRatings, totalReviews };
+  }, [rawReviews, selectedRange]);
 
   // Unresolved flagged reviews for the Action Items section
   const unresolvedFlagged: NegativeReview[] = useMemo(() => {
@@ -244,9 +291,9 @@ function CustomerServiceDashboardPage() {
 
   return (
     // Cap the review monitoring tab height and make the inner content scrollable
-    <div className="max-w-3xl mx-auto w-full max-h-[calc(100vh-220px)] flex flex-col">
-      <div className="overflow-auto flex-1 space-y-4">
-        {/* Header + Date range selector */}
+    <div className="w-full flex flex-col overflow-y-auto" style={{ height: 'calc(100vh - 220px)' }}>
+      {/* Fixed Header */}
+      <div className="shrink-0 px-6 pt-6 pb-4">
         <section className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Review Monitoring</h1>
@@ -312,36 +359,14 @@ function CustomerServiceDashboardPage() {
             </div>
           </div>
         </section>
+      </div>
 
-        {/* Stats */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                {selectedRange === "Show all reviews" ? "Total Reviews" : `Total Reviews in the ${getTimePeriodLabel(selectedRange)}`}
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900">{stats.totalReviews}</span>
-              </div>
-            </div>
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
-              <MessageCircle className="h-6 w-6 text-blue-500" />
-            </div>
-          </div>
+      {/* Stats - Fixed, not scrollable */}
+      <div className="shrink-0 px-6 pb-4">
+      </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Average Rating</p>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900">{stats.avgRating.toFixed(1)}</span>
-                {renderStars(stats.avgRating)}
-              </div>
-            </div>
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gray-50">
-              <StarIcon className="h-6 w-6 text-yellow-400" />
-            </div>
-          </div>
-        </section>
+      {/* Action Items - Scrollable section */}
+      <div className="overflow-y-auto overflow-x-hidden flex-1 px-6 pb-6">
 
         {/* Action Items */}
         <section className="space-y-3">
@@ -372,23 +397,59 @@ function CustomerServiceDashboardPage() {
           </div>
 
           {unresolvedFlagged.length > 0 && (
-            <div className="flex items-center gap-4 rounded-xl bg-red-50 p-4 shadow-sm">
-              <span className="text-red-600">
-                <AlertTriangle className="h-6 w-6" />
-              </span>
-              <div className="flex-1 space-y-1">
-                <p className="text-base font-semibold text-red-700">
-                  {unresolvedFlagged.length} Negative Review{unresolvedFlagged.length > 1 ? "s" : ""}
-                </p>
-                <p className="text-sm text-red-600">Require immediate response and follow-up</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 rounded-xl bg-red-50 p-4 shadow-sm">
+                <span className="text-red-600">
+                  <AlertTriangle className="h-6 w-6" />
+                </span>
+                <div className="flex-1 space-y-1">
+                  <p className="text-base font-semibold text-red-700">
+                    {unresolvedFlagged.length} Negative Review{unresolvedFlagged.length > 1 ? "s" : ""}
+                  </p>
+                  <p className="text-sm text-red-600">Require immediate response and follow-up</p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsNegativeDrawerOpen(true)}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                Review Now
-              </button>
+
+              {/* Display negative reviews directly below */}
+              <div className="space-y-3">
+                {unresolvedFlagged.map((review, idx) => {
+                  const isBlurred = !isPro && idx >= 3;
+                  return (
+                  <article
+                    key={review.docId}
+                    className={`space-y-2 rounded-xl border border-red-100 bg-red-50/60 p-4 ${isBlurred ? "blur-sm pointer-events-none select-none" : ""}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">{review.reviewer}</p>
+                      <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                        Flagged
+                      </span>
+                    </div>
+                    <div className="text-sm text-yellow-400">{renderStars(review.rating)}</div>
+                    <p className="text-sm leading-relaxed text-gray-700">{review.message}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-400">{review.timestamp}</p>
+                      {isPro ? (
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(review.docId)}
+                        className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <Check size={13} />
+                        Mark Resolved
+                      </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Pro feature</span>
+                      )}
+                    </div>
+                  </article>
+                  );
+                })}
+              </div>
+
+              {!isPro && unresolvedFlagged.length > 3 && (
+                <UpgradeBanner feature="Full Action Items" />
+              )}
             </div>
           )}
         </section>

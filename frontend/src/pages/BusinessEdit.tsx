@@ -489,6 +489,20 @@ const BusinessEdit: React.FC = () => {
                         </div>
                       </div>
 
+                      <p className="mt-4 text-center text-sm text-gray-600">We look forward to serving you again soon!</p>
+                      {(form.phone_number || form.website_url) && (
+                        <div className="mt-2 text-center text-base text-gray-900 space-y-1">
+                          {form.phone_number && <p>{form.phone_number}</p>}
+                          {form.website_url && (
+                            <p>
+                              <a href={form.website_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                {form.website_url}
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Back-to-form button removed: toggle at the top provides mode switching */}
                     </div>
                   )}

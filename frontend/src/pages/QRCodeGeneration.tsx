@@ -111,9 +111,6 @@ const QRCodeGeneration = () => {
             <h3 className="font-semibold text-gray-900">
               {business?.name || "Your Business"}
             </h3>
-            {business?.address && (
-              <p className="text-sm text-gray-600">{business.address}</p>
-            )}
           </div>
         </div>
         <div className="mt-3 pt-3 border-t border-amber-300">

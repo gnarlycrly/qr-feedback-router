@@ -22,6 +22,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
   const { isPro } = useSubscription();
   const canAddReward = isPro || rewards.length < 1;
   const [view, setView] = useState<"rewards" | "redemptions">("rewards");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   /** Keyed by trimmed rewardTitle from issuedRewards (matches reward.title at issuance). */
   const [redemptionStatsByTitle, setRedemptionStatsByTitle] = useState<
     Record<string, { issued: number; redeemed: number }>
@@ -93,6 +94,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
     const updated = rewards.filter((r) => r.id !== id);
     setRewards(updated);
     saveRewards(updated);
+    setDeleteConfirmId(null);
   };
 
   return (
@@ -119,7 +121,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
 
       {view === "rewards" ? (
         <>
-          <div className="overflow-auto flex-1 space-y-4 pb-4">
+          <div className="overflow-visible flex-1 space-y-4 pb-4">
             {rewards.map((reward) => (
               <RewardCard
                 key={reward.id}
@@ -127,6 +129,9 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
                 onToggleActive={toggleRewardActive}
                 onDelete={deleteReward}
                 redemptionCounts={redemptionStatsByTitle[reward.title.trim()] ?? { issued: 0, redeemed: 0 }}
+                showConfirm={deleteConfirmId === reward.id}
+                onShowConfirm={() => setDeleteConfirmId(reward.id)}
+                onHideConfirm={() => setDeleteConfirmId(null)}
               />
             ))}
           </div>
@@ -142,7 +147,7 @@ const RewardManagement = ({ showAddWindow, setShowAddWindow }: RewardManagementP
           />
         </>
       ) : (
-        <div className="overflow-auto flex-1 pb-2">
+        <div className="overflow-y-auto flex-1 pb-2">
           <RedemptionsPage businessId={businessId} />
         </div>
       )}
