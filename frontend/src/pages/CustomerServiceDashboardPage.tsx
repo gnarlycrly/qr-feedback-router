@@ -4,10 +4,8 @@ import {
   AlertTriangle,
   Calendar,
   Check,
-  MessageCircle,
   Star as StarIcon,
   X,
-  TrendingUp,
 } from "lucide-react";
 import { collection, query, where, orderBy, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useAuth } from "../firebaseHelpers/AuthContext";
@@ -45,18 +43,18 @@ type NegativeReview = Review & {
 
 const rangeOptions: RangeOption[] = ["Last 7 days", "Last 30 days", "Quarter to date", "Show all reviews"];
 
-const getTimePeriodLabel = (range: RangeOption): string => {
-  switch (range) {
-    case "Last 7 days":
-      return "last 7 days";
-    case "Last 30 days":
-      return "last 30 days";
-    case "Quarter to date":
-      return "quarter to date";
-    case "Show all reviews":
-      return "all time";
-  }
-};
+// const getTimePeriodLabel = (range: RangeOption): string => {
+//   switch (range) {
+//     case "Last 7 days":
+//       return "last 7 days";
+//     case "Last 30 days":
+//       return "last 30 days";
+//     case "Quarter to date":
+//       return "quarter to date";
+//     case "Show all reviews":
+//       return "all time";
+//   }
+// };
 
 const getDateRangeFilter = (range: RangeOption): Date | null => {
   if (range === "Show all reviews") return null;
@@ -203,58 +201,58 @@ function CustomerServiceDashboardPage() {
   }, [rawReviews, resolvedIds, threshold]);
 
   // Aggregate stats (all reviews in the date range, unaffected by resolved status)
-  const stats = useMemo(() => {
-    const total = rawReviews.length;
-    const sum = rawReviews.reduce((acc, r) => acc + r.rating, 0);
-    return {
-      totalReviews: total,
-      avgRating: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
-    };
-  }, [rawReviews]);
+  // const stats = useMemo(() => {
+  //   const total = rawReviews.length;
+  //   const sum = rawReviews.reduce((acc, r) => acc + r.rating, 0);
+  //   return {
+  //     totalReviews: total,
+  //     avgRating: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
+  //   };
+  // }, [rawReviews]);
 
   // Generate time-series data for graphs
-  const chartData = useMemo(() => {
-    if (rawReviews.length === 0) return { labels: [], avgRatings: [], totalReviews: [] };
+  // const chartData = useMemo(() => {
+  //   if (rawReviews.length === 0) return { labels: [], avgRatings: [], totalReviews: [] };
 
-    const filterDate = getDateRangeFilter(selectedRange);
-    const now = new Date();
-    const startDate = filterDate || new Date(Math.min(...rawReviews.map(r => r.createdAt?.getTime() || Date.now())));
+  //   const filterDate = getDateRangeFilter(selectedRange);
+  //   const now = new Date();
+  //   const startDate = filterDate || new Date(Math.min(...rawReviews.map(r => r.createdAt?.getTime() || Date.now())));
     
-    // Determine number of data points based on range
-    let numPoints = 7;
-    if (selectedRange === "Last 30 days") numPoints = 10;
-    else if (selectedRange === "Quarter to date") numPoints = 12;
-    else if (selectedRange === "Show all reviews") numPoints = 12;
+  //   // Determine number of data points based on range
+  //   let numPoints = 7;
+  //   if (selectedRange === "Last 30 days") numPoints = 10;
+  //   else if (selectedRange === "Quarter to date") numPoints = 12;
+  //   else if (selectedRange === "Show all reviews") numPoints = 12;
 
-    const timeSpan = now.getTime() - startDate.getTime();
-    const interval = timeSpan / numPoints;
+  //   const timeSpan = now.getTime() - startDate.getTime();
+  //   const interval = timeSpan / numPoints;
 
-    const labels: string[] = [];
-    const avgRatings: number[] = [];
-    const totalReviews: number[] = [];
+  //   const labels: string[] = [];
+  //   const avgRatings: number[] = [];
+  //   const totalReviews: number[] = [];
 
-    for (let i = 0; i <= numPoints; i++) {
-      const pointTime = new Date(startDate.getTime() + interval * i);
-      const nextPointTime = new Date(startDate.getTime() + interval * (i + 1));
+  //   for (let i = 0; i <= numPoints; i++) {
+  //     const pointTime = new Date(startDate.getTime() + interval * i);
+  //     const nextPointTime = new Date(startDate.getTime() + interval * (i + 1));
       
-      // Filter reviews in this time bucket
-      const reviewsInBucket = rawReviews.filter(r => {
-        if (!r.createdAt) return false;
-        return r.createdAt >= pointTime && r.createdAt < nextPointTime;
-      });
+  //     // Filter reviews in this time bucket
+  //     const reviewsInBucket = rawReviews.filter(r => {
+  //       if (!r.createdAt) return false;
+  //       return r.createdAt >= pointTime && r.createdAt < nextPointTime;
+  //     });
 
-      // Calculate average rating for this bucket
-      const bucketTotal = reviewsInBucket.length;
-      const bucketSum = reviewsInBucket.reduce((acc, r) => acc + r.rating, 0);
-      const bucketAvg = bucketTotal > 0 ? bucketSum / bucketTotal : 0;
+  //     // Calculate average rating for this bucket
+  //     const bucketTotal = reviewsInBucket.length;
+  //     const bucketSum = reviewsInBucket.reduce((acc, r) => acc + r.rating, 0);
+  //     const bucketAvg = bucketTotal > 0 ? bucketSum / bucketTotal : 0;
 
-      labels.push(pointTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-      avgRatings.push(bucketAvg);
-      totalReviews.push(bucketTotal);
-    }
+  //     labels.push(pointTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  //     avgRatings.push(bucketAvg);
+  //     totalReviews.push(bucketTotal);
+  //   }
 
-    return { labels, avgRatings, totalReviews };
-  }, [rawReviews, selectedRange]);
+  //   return { labels, avgRatings, totalReviews };
+  // }, [rawReviews, selectedRange]);
 
   // Unresolved flagged reviews for the Action Items section
   const unresolvedFlagged: NegativeReview[] = useMemo(() => {
