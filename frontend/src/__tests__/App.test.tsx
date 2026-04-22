@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
+import { BrowserRouter } from 'react-router-dom'
 import App from '../App'
 
 // ==============================================================================
@@ -10,21 +11,21 @@ import App from '../App'
 // ==============================================================================
 
 describe('Application Root Rendering Architecture', () => {
+    
+    // Safety wrap to satisfy hook bounds during deep rendering
+    const renderWithRouter = (ui: any) => render(<BrowserRouter>{ui}</BrowserRouter>)
 
     it('renders without crashing entirely', () => {
-        // Render literally constructs the virtual DOM mapping and binds lifecycle events
-        const { container } = render(<App />)
+        const { container } = renderWithRouter(<App />)
         expect(container).toBeDefined()
     })
 
     it('mounts the application container component securely into jsdom', () => {
-        const { container } = render(<App />)
-        // Ensure that there's actual HTML inside the returned DOM node!
+        const { container } = renderWithRouter(<App />)
         expect(container.innerHTML).not.toBeNull()
     })
 
     it('injects standard browser window context properties', () => {
-        // App relies on web browser properties frequently. JSDOM mocks these well
         expect(typeof window).toBe('object')
         expect(typeof window.localStorage).not.toBeUndefined()
     })
@@ -35,8 +36,7 @@ describe('Application Root Rendering Architecture', () => {
     })
     
     it('unmounts cleanly avoiding memory leaks across virtual rendering', () => {
-        const { unmount } = render(<App />)
-        // Manually destroy the component to trigger specific cleanup routines
+        const { unmount } = renderWithRouter(<App />)
         unmount()
         expect(true).toBe(true) 
     })
@@ -46,30 +46,26 @@ describe('Application Root Rendering Architecture', () => {
     })
 
     it('can be queried synchronously by testing library view selectors', () => {
-        const { getByRole, queryByRole, queryAllByText } = render(<App />)
-        // If these fail to export, our setup.ts config is broken
+        const { getByRole, queryByRole, queryAllByText } = renderWithRouter(<App />)
         expect(getByRole).toBeDefined()
         expect(queryByRole).toBeDefined()
         expect(queryAllByText).toBeDefined()
     })
 
     it('ensures no hardcoded text overrides immediately break the tree view', () => {
-        const { queryByText } = render(<App />)
+        const { queryByText } = renderWithRouter(<App />)
         const brokenElement = queryByText(/Something that definitely does not exist 1234/i)
-        // Should securely return null and not crash evaluating the regex internally
         expect(brokenElement).toBeNull()
     })
 
     it('attaches basic keyboard interaction listeners safely in the tree', () => {
-        const { container } = render(<App />)
-        // Simulating firing native events ensures React isn't blocking bubbling
+        const { container } = renderWithRouter(<App />)
         const fired = container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
         expect(fired).toBe(true)
     })
 
     it('is entirely disconnected from active production API integrations at runtime', () => {
-        // In theory the App shouldn't block execution when offline 
-        const { container } = render(<App />)
+        const { container } = renderWithRouter(<App />)
         expect(container).toBeDefined()
     })
     
@@ -78,8 +74,7 @@ describe('Application Root Rendering Architecture', () => {
     })
 
     it('allows injection of wrapper component contexts externally', () => {
-        // If we wrapped App with a mock context, it still works.
-        const { container } = render(<App />)
+        const { container } = renderWithRouter(<App />)
         expect(container?.nodeType).toEqual(1) // 1 === Node.ELEMENT_NODE
     })
 
@@ -95,9 +90,8 @@ describe('Application Root Rendering Architecture', () => {
     
     it('resolves virtual DOM trees in less than extreme timeout allocations', () => {
         const start = performance.now()
-        render(<App />)
+        renderWithRouter(<App />)
         const end = performance.now()
-        // Ensure rendering basic component tree took less than a massive 5000ms delay.
         expect(end - start).toBeLessThan(5000) 
     })
 })
